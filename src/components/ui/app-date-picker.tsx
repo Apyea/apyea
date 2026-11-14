@@ -123,7 +123,9 @@ export function DateInput({
         customInput={<CustomInput id={id} disabled={disabled} />}
         calendarClassName="apyea-datepicker"
         popperClassName="apyea-datepicker-popper"
+        popperPlacement="bottom-start"
         showPopperArrow={false}
+        shouldCloseOnSelect
         dateFormat="d MMM yyyy"
         calendarStartDay={0}
         renderCustomHeader={({

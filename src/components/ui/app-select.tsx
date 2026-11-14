@@ -5,11 +5,13 @@ import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import {
   Children,
   isValidElement,
+  useEffect,
   useMemo,
   type ReactElement,
   type ReactNode,
   type SelectHTMLAttributes,
 } from "react";
+import { ensureListboxOutsideClickGuard } from "@/lib/ui/listbox-outside-click";
 
 type ParsedOption = {
   value: string;
@@ -43,7 +45,7 @@ const triggerBase =
   "relative flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-[#1E2E24]/12 bg-white px-3 py-2.5 text-left text-sm text-[#1E2E24] outline-none transition focus:border-[#3d79ff]/40 focus:ring-2 focus:ring-[#3d79ff]/15 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50";
 
 const menuPanel =
-  "z-50 min-w-[var(--button-width)] rounded-2xl border border-[rgba(9,9,11,0.05)] bg-white p-1 shadow-[0px_0px_20px_0px_rgba(9,9,11,0.1)] outline-none [--anchor-gap:6px]";
+  "z-[200] min-w-[var(--button-width)] rounded-2xl border border-[rgba(9,9,11,0.05)] bg-white p-1 shadow-[0px_0px_20px_0px_rgba(9,9,11,0.1)] outline-none [--anchor-gap:6px]";
 
 const menuItem =
   "flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-[11px] text-sm leading-[1.4] text-[#00030e] outline-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40 data-[focus]:bg-[rgba(61,121,255,0.05)] data-[selected]:bg-[rgba(61,121,255,0.05)]";
@@ -58,6 +60,10 @@ export function SelectInput({
   name: _name,
   id,
 }: SelectHTMLAttributes<HTMLSelectElement>) {
+  useEffect(() => {
+    ensureListboxOutsideClickGuard();
+  }, []);
+
   const options = useMemo(() => parseOptionChildren(children), [children]);
   const stringValue = value === undefined || value === null ? "" : String(value);
 
@@ -91,7 +97,7 @@ export function SelectInput({
           <ChevronDownIcon className="size-5 shrink-0 text-[rgba(0,3,14,0.35)]" aria-hidden />
         </ListboxButton>
 
-        <ListboxOptions anchor="bottom start" transition className={menuPanel}>
+        <ListboxOptions anchor="bottom start" modal={false} transition className={menuPanel}>
           {options.map((option) => (
             <ListboxOption
               key={`${option.value}-${option.label}`}

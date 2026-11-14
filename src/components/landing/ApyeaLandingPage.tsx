@@ -1,21 +1,19 @@
 "use client";
 
-import { Dialog, DialogPanel } from "@headlessui/react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
+import { PublicSiteHeader } from "@/components/layout/PublicSiteHeader";
 import { APYEA_LOGO_ALT, APYEA_LOGO_SRC } from "@/lib/brand";
-import { useState } from "react";
+import { LANDING_SECTION_NAV, PUBLIC_SITE_NAV } from "@/lib/public-navigation";
 
-const NAV = [
-  { href: "#home", label: "Home" },
-  { href: "#about", label: "About" },
-  { href: "/team", label: "Our Team" },
-  { href: "/events", label: "Events" },
-  { href: "#vision", label: "Vision" },
-  { href: "#programs", label: "Programmes" },
-  { href: "#join", label: "Join" },
-] as const;
+const joinHeaderAction = (
+  <Link
+    href="/join"
+    className="rounded-full bg-[#2F4F3A] px-5 py-2.5 text-sm font-semibold text-[#FAF7F2] shadow-sm transition hover:bg-[#243D2E]"
+  >
+    Join
+  </Link>
+);
 
 const HIGHLIGHTS = [
   {
@@ -65,93 +63,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function ApyeaLandingPage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   return (
     <div className="min-h-full bg-[#FAF7F2] text-[#1E2E24]">
-      <header className="sticky top-0 z-50 border-b border-[#1E2E24]/5 bg-[#FAF7F2]/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 lg:px-8">
-          <Link href="#home" className="flex items-center gap-3" onClick={() => setMobileOpen(false)}>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-              <Image
-                src={APYEA_LOGO_SRC}
-                alt={APYEA_LOGO_ALT}
-                width={44}
-                height={44}
-                className="h-11 w-11 object-contain"
-                priority
-              />
-            </span>
-            <span className="hidden sm:block">
-              <span className="block text-sm font-bold tracking-tight">APYEA</span>
-              <span className="block text-[11px] font-medium text-[#5F7A66]">
-                Andhra Pradesh Yoga Educators Association
-              </span>
-            </span>
-          </Link>
-
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
-            {NAV.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="rounded-full px-3.5 py-2 text-sm font-medium text-[#3D5244] transition hover:bg-[#E8EFE9] hover:text-[#1E2E24]"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="hidden items-center gap-3 lg:flex">
-            <Link
-              href="/join"
-              className="rounded-full bg-[#2F4F3A] px-5 py-2.5 text-sm font-semibold text-[#FAF7F2] shadow-sm transition hover:bg-[#243D2E]"
-            >
-              Join
-            </Link>
-          </div>
-
-          <button
-            type="button"
-            className="inline-flex rounded-full border border-[#1E2E24]/10 p-2.5 lg:hidden"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Open menu"
-          >
-            <Bars3Icon className="size-5" />
-          </button>
-        </div>
-      </header>
-
-      <Dialog open={mobileOpen} onClose={setMobileOpen} className="lg:hidden">
-        <div className="fixed inset-0 z-50 bg-[#1E2E24]/40" aria-hidden="true" />
-        <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-[#FAF7F2] p-6 shadow-xl">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold">Menu</span>
-            <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close menu">
-              <XMarkIcon className="size-6" />
-            </button>
-          </div>
-          <nav className="mt-8 flex flex-col gap-1">
-            {NAV.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className="rounded-xl px-3 py-3 text-base font-medium hover:bg-[#E8EFE9]"
-              >
-                {item.label}
-              </a>
-            ))}
-            <Link
-              href="/join"
-              onClick={() => setMobileOpen(false)}
-              className="mt-4 rounded-full bg-[#2F4F3A] px-4 py-3 text-center text-sm font-semibold text-white"
-            >
-              Join
-            </Link>
-          </nav>
-        </DialogPanel>
-      </Dialog>
+      <PublicSiteHeader headerActions={joinHeaderAction} />
 
       <main>
         <section id="home" className="relative overflow-hidden">
@@ -419,13 +333,22 @@ export function ApyeaLandingPage() {
             <p className="mt-4 text-sm font-semibold text-white">One Profession. One Community. One Platform.</p>
             <p className="mt-2 text-sm">Andhra Pradesh Yoga Educators Association (APYEA)</p>
           </div>
-          <nav aria-label="Footer">
-            <ul className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-              {NAV.map((item) => (
+          <nav aria-label="Footer" className="grid gap-8 sm:grid-cols-2">
+            <ul className="grid gap-y-2 text-sm">
+              {PUBLIC_SITE_NAV.map((item) => (
                 <li key={item.href}>
-                  <a href={item.href} className="transition hover:text-white">
+                  <Link href={item.href} className="transition hover:text-white">
                     {item.label}
-                  </a>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <ul className="grid gap-y-2 text-sm">
+              {LANDING_SECTION_NAV.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="transition hover:text-white">
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>

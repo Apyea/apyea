@@ -1,8 +1,10 @@
+import { PublicFormPage } from "@/components/layout/PublicFormPage";
+
 export const instant = false;
 
 export default function RegisterCompletePage() {
   return (
-    <main className="mx-auto max-w-lg px-4 py-16">
+    <PublicFormPage maxWidthClass="max-w-lg">
       <div className="rounded-2xl bg-white p-6 ring-1 ring-zinc-950/10">
         <h1 className="text-lg font-medium text-zinc-950">Create your account</h1>
         <p className="mt-2 text-sm text-zinc-950/55">
@@ -10,9 +12,9 @@ export default function RegisterCompletePage() {
           enabled.
         </p>
         <p className="mt-4 text-xs text-zinc-950/45">
-          Wire this page to your Cognito hosted UI / Amplify flow.
+          Wire this page to your hosted sign-up flow when ready.
         </p>
       </div>
-    </main>
+    </PublicFormPage>
   );
 }

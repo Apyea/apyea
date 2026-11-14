@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { APYEA_LOGO_ALT, APYEA_LOGO_SRC } from "@/lib/brand";
+import { PublicSiteChrome } from "@/components/team/PublicSiteChrome";
 
 const VOICE_PILLARS = [
   {
@@ -29,32 +28,9 @@ const VOICE_PILLARS = [
 
 export function JoinCampaignPage() {
   return (
-    <div className="min-h-full bg-[#FAF7F2] text-[#1E2E24]">
-      <header className="bg-[#1B3D32] text-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-5 py-4 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center">
-              <Image
-                src={APYEA_LOGO_SRC}
-                alt={APYEA_LOGO_ALT}
-                width={40}
-                height={40}
-                className="h-10 w-10 object-contain"
-                priority
-              />
-            </span>
-            <span className="hidden text-xs font-semibold uppercase tracking-wide sm:block">
-              APYEA
-            </span>
-          </Link>
-          <Link
-            href="/"
-            className="text-sm font-medium text-[#E8D5A8] transition hover:text-white"
-          >
-            ← Back to home
-          </Link>
-        </div>
-        <div className="mx-auto max-w-4xl px-5 pb-12 pt-4 lg:px-8 lg:pb-16">
+    <PublicSiteChrome>
+      <div className="bg-[#1B3D32] text-white">
+        <div className="mx-auto max-w-4xl px-5 pb-12 pt-10 lg:px-8 lg:pb-16">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85">
             Andhra Pradesh Yoga Educators Association (APYEA)
           </p>
@@ -65,9 +41,9 @@ export function JoinCampaignPage() {
             A Statewide Professional Survey · Andhra Pradesh
           </p>
         </div>
-      </header>
+      </div>
 
-      <main className="mx-auto max-w-4xl px-5 py-12 lg:px-8 lg:py-16">
+      <div className="mx-auto max-w-4xl px-5 py-12 lg:px-8 lg:py-16">
         <section aria-labelledby="join-lede">
           <h2
             id="join-lede"
@@ -140,13 +116,13 @@ export function JoinCampaignPage() {
             Register now
           </Link>
         </section>
-      </main>
+      </div>
 
-      <footer className="bg-[#1B3D32] py-8 text-center">
+      <footer className="bg-[#1B3D32] py-8 text-center text-white">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90">
           One Profession · One Community · One Collective Voice
         </p>
       </footer>
-    </div>
+    </PublicSiteChrome>
   );
 }

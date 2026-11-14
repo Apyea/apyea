@@ -141,49 +141,34 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
     }
   }
 
+  let body: React.ReactNode;
+
   if (loading) {
-    return (
-      <PublicSiteChrome>
-        <p className="px-5 py-16 text-sm text-[#5F7A66]">Loading…</p>
-      </PublicSiteChrome>
+    body = <p className="px-5 py-16 text-sm text-[#5F7A66]">Loading…</p>;
+  } else if (!event) {
+    body = (
+      <div className="mx-auto max-w-lg px-5 py-16">
+        <p className="text-sm text-red-600">{error ?? "Event not available"}</p>
+        <Link href="/events" className="mt-4 inline-block text-sm font-medium text-[#2F4F3A]">
+          ← All events
+        </Link>
+      </div>
     );
-  }
-
-  if (!event) {
-    return (
-      <PublicSiteChrome>
-        <div className="mx-auto max-w-lg px-5 py-16">
-          <p className="text-sm text-red-600">{error ?? "Event not available"}</p>
-          <Link href="/events" className="mt-4 inline-block text-sm font-medium text-[#2F4F3A]">
-            ← All events
+  } else if (successRef) {
+    body = (
+      <div className="mx-auto max-w-lg px-5 py-16">
+        <FormShell title="Registration received" subtitle={`Reference: ${successRef}`}>
+          <p className="text-sm text-[#5F7A66]">
+            We will verify your payment and confirm your registration by email.
+          </p>
+          <Link href="/events" className="mt-6 inline-block text-sm font-medium text-[#2F4F3A]">
+            Back to events
           </Link>
-        </div>
-      </PublicSiteChrome>
+        </FormShell>
+      </div>
     );
-  }
-
-  if (successRef) {
-    return (
-      <PublicSiteChrome>
-        <div className="mx-auto max-w-lg px-5 py-16">
-          <FormShell
-            title="Registration received"
-            subtitle={`Reference: ${successRef}`}
-          >
-            <p className="text-sm text-[#5F7A66]">
-              We will verify your payment and confirm your registration by email.
-            </p>
-            <Link href="/events" className="mt-6 inline-block text-sm font-medium text-[#2F4F3A]">
-              Back to events
-            </Link>
-          </FormShell>
-        </div>
-      </PublicSiteChrome>
-    );
-  }
-
-  return (
-    <PublicSiteChrome>
+  } else {
+    body = (
       <div className="mx-auto max-w-2xl px-5 py-10 lg:px-8">
         <Link href="/events" className="text-sm font-medium text-[#2F4F3A] hover:underline">
           ← All events
@@ -349,6 +334,8 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
           </form>
         </FormShell>
       </div>
-    </PublicSiteChrome>
-  );
+    );
+  }
+
+  return <PublicSiteChrome>{body}</PublicSiteChrome>;
 }

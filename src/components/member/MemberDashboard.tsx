@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { AppMain } from "@/components/layout/AppMain";
 import { AppTopBar } from "@/components/layout/AppTopBar";
+import { PublicSiteHeader } from "@/components/layout/PublicSiteHeader";
 import { isStaffRole } from "@/lib/auth/staff-roles";
 import { SecondaryButton } from "@/components/ui/form-primitives";
 import { MemberDashboardSkeleton } from "@/components/ui/skeleton";
@@ -42,7 +43,9 @@ function MemberShell({
 }) {
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#FAF7F2]">
+      <PublicSiteHeader />
       <AppTopBar
+        showLogo={false}
         user={
           session
             ? { email: session.user.email, name: session.user.name }
