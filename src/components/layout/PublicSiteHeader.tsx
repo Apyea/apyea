@@ -29,56 +29,77 @@ export function PublicSiteHeader({ headerActions }: { headerActions?: ReactNode 
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-[#1E2E24]/5 bg-[#FAF7F2]/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-              <Image
-                src={APYEA_LOGO_SRC}
-                alt={APYEA_LOGO_ALT}
-                width={44}
-                height={44}
-                className="h-11 w-11 object-contain"
-                priority
-              />
-            </span>
-            <span className="hidden sm:block">
-              <span className="block text-sm font-bold tracking-tight">APYEA</span>
-              <span className="block text-[11px] font-medium text-[#5F7A66]">
-                Andhra Pradesh Yoga Educators Association
+        <div className="mx-auto max-w-6xl px-5 py-3 lg:px-8">
+          <div className="flex items-center justify-between gap-3">
+            <Link href="/" className="flex min-w-0 shrink-0 items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                <Image
+                  src={APYEA_LOGO_SRC}
+                  alt={APYEA_LOGO_ALT}
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 object-contain"
+                  priority
+                />
               </span>
-            </span>
-          </Link>
+              <span className="hidden sm:block">
+                <span className="block text-sm font-bold tracking-tight">APYEA</span>
+                <span className="block text-[11px] font-medium text-[#5F7A66]">
+                  Andhra Pradesh Yoga Educators Association
+                </span>
+              </span>
+            </Link>
 
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
+            <nav
+              className="hidden min-w-0 flex-1 flex-wrap items-center justify-center gap-1 md:flex"
+              aria-label="Main"
+            >
+              {PUBLIC_SITE_NAV.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={navLinkClass(isActive(item.href))}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="hidden shrink-0 items-center gap-3 md:flex">
+              {headerActions}
+            </div>
+
+            <button
+              type="button"
+              className="inline-flex shrink-0 rounded-full border border-[#1E2E24]/10 p-2.5 md:hidden"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
+            >
+              <Bars3Icon className="size-5" />
+            </button>
+          </div>
+
+          <nav
+            className="-mx-1 mt-2 flex gap-1 overflow-x-auto pb-1 md:hidden"
+            aria-label="Main"
+          >
             {PUBLIC_SITE_NAV.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={navLinkClass(isActive(item.href))}
+                className={`shrink-0 ${navLinkClass(isActive(item.href))}`}
                 aria-current={isActive(item.href) ? "page" : undefined}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
-
-          <div className="hidden items-center gap-3 lg:flex">
-            {headerActions}
-          </div>
-
-          <button
-            type="button"
-            className="inline-flex rounded-full border border-[#1E2E24]/10 p-2.5 lg:hidden"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Open menu"
-          >
-            <Bars3Icon className="size-5" />
-          </button>
         </div>
       </header>
 
       {mobileOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 md:hidden">
           <button
             type="button"
             className="absolute inset-0 bg-[#1E2E24]/40"

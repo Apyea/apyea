@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { PublicSiteChrome } from "@/components/team/PublicSiteChrome";
 
+/** Centered auth card — wrap the page in `PublicSiteChrome` for site nav. */
 export function AuthShell({
   title,
   subtitle,
@@ -13,17 +13,15 @@ export function AuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <PublicSiteChrome>
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-8 sm:min-h-[calc(100dvh-4rem)] sm:py-12">
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[#1E2E24]/8 sm:p-8">
-          <h1 className="text-xl font-bold tracking-tight text-[#1B3D32]">{title}</h1>
-          {subtitle ? <p className="mt-2 text-sm text-[#5F7A66]">{subtitle}</p> : null}
-          <div className="mt-6 space-y-4">{children}</div>
-        </div>
-        {footer ? (
-          <div className="mt-6 text-center text-sm text-[#5F7A66]">{footer}</div>
-        ) : null}
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-8 sm:min-h-[calc(100dvh-4rem)] sm:py-12">
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[#1E2E24]/8 sm:p-8">
+        <h1 className="text-xl font-bold tracking-tight text-[#1B3D32]">{title}</h1>
+        {subtitle ? <p className="mt-2 text-sm text-[#5F7A66]">{subtitle}</p> : null}
+        <div className="mt-6 space-y-4">{children}</div>
       </div>
-    </PublicSiteChrome>
+      {footer ? (
+        <div className="mt-6 text-center text-sm text-[#5F7A66]">{footer}</div>
+      ) : null}
+    </div>
   );
 }
