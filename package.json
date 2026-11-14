@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && npx prisma db seed && next build && npm run bootstrap:admins -- 9652570462 b.charan123@gmail.com && npm run bootstrap:admins -- 9989834635 ramasiva.challa@gmail.com ",
+    "build": "prisma generate && prisma migrate deploy",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "prisma generate",
