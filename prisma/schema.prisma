@@ -1,0 +1,907 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  EDUCATOR
+  OPERATIONAL_MANAGER
+  EXECUTIVE_MANAGER
+  ADMIN
+}
+
+enum SurveySubmissionStatus {
+  DRAFT
+  SUBMITTED
+  WITHDRAWN
+}
+
+enum SurveyReviewStatus {
+  NOT_STARTED
+  APPROVED
+  REJECTED
+}
+
+enum MembershipApplicationStatus {
+  SUBMITTED
+  PENDING_INFORMATION_VERIFICATION
+  PENDING_PAYMENT_VERIFICATION
+  VERIFIED
+  APPROVED
+  REJECTED
+}
+
+enum MembershipPaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  RENEWAL_DUE
+}
+
+enum RenewalApplicationStatus {
+  SUBMITTED
+  PAYMENT_VERIFICATION_PENDING
+  VERIFIED
+  APPROVED
+  REJECTED
+}
+
+enum PaymentCategory {
+  MEMBERSHIP_FEE
+  RENEWAL_FEE
+  DONATION
+  PROGRAM_FEE
+  EVENT_FEE
+  SUBSCRIPTION_FEE
+}
+
+enum SubscriptionBasis {
+  MEMBERSHIP
+  PROGRAM
+  EVENT
+}
+
+enum ExpenseCategory {
+  RENT
+  CLOUD_CHARGES
+  PROGRAM_EXPENSE
+  STATIONARY
+  ADMINISTRATIVE
+}
+
+enum ExpenseVoucherStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum SubscriptionEnrollmentStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  ONLINE
+  CHEQUE
+  BANK_TRANSFER
+}
+
+enum PaymentVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum EmailLogStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum EventRegistrationStatus {
+  SUBMITTED
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+model User {
+  id         String   @id @default(cuid())
+  cognitoSub String   @unique @map("cognito_sub")
+  email      String   @unique
+  name       String?
+  role       UserRole @default(USER)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  memberProfile              Member?
+  reviewedMembershipApps     MembershipApplication[] @relation("MembershipReviewedBy")
+  submittedEventRegistrations EventRegistration[]    @relation("EventRegistrationSubmitter")
+  reviewedEventRegistrations EventRegistration[]     @relation("EventRegistrationReviewedBy")
+  verifiedPayments           PaymentRecord[]         @relation("PaymentVerifiedBy")
+  enteredExpenseVouchers     ExpenseVoucher[]        @relation("ExpenseEnteredBy")
+  approvedExpenseVouchers    ExpenseVoucher[]        @relation("ExpenseApprovedBy")
+  auditLogs                  AuditLog[]
+
+  @@map("users")
+}
+
+model Gender {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveys EducatorSurvey[]
+
+  @@map("genders")
+}
+
+model Nationality {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveys EducatorSurvey[]
+
+  @@map("nationalities")
+}
+
+model State {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  districts              District[]
+  educatorSurveys        EducatorSurvey[]
+  membershipApplications MembershipApplication[]
+
+  @@map("states")
+}
+
+model District {
+  id        String   @id @default(cuid())
+  stateId   String   @map("state_id")
+  name      String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  state                  State                   @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  mandals                Mandal[]
+  educatorSurveys        EducatorSurvey[]
+  membershipApplications MembershipApplication[]
+
+  @@unique([stateId, name])
+  @@map("districts")
+}
+
+model Mandal {
+  id         String   @id @default(cuid())
+  districtId String   @map("district_id")
+  name       String
+  sortOrder  Int      @default(0) @map("sort_order")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  district               District                @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  educatorSurveys        EducatorSurvey[]
+  membershipApplications MembershipApplication[]
+
+  @@unique([districtId, name])
+  @@map("mandals")
+}
+
+model YogaQualificationLevel {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveys                   EducatorSurvey[]
+  educatorSurveyYogaEntries         EducatorSurveyYogaQualification[]
+  membershipApplications            MembershipApplication[]
+  membershipApplicationYogaEntries  MembershipApplicationYogaQualification[]
+
+  @@map("yoga_qualification_levels")
+}
+
+model YogaProfessionalType {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveys EducatorSurvey[]
+
+  @@map("yoga_professional_types")
+}
+
+model EmploymentStatus {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveys EducatorSurvey[]
+
+  @@map("employment_statuses")
+}
+
+model GovWorkInterestOption {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveys EducatorSurvey[]
+
+  @@map("gov_work_interest_options")
+}
+
+model VolunteerResponse {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveys EducatorSurvey[]
+
+  @@map("volunteer_responses")
+}
+
+model LectureLanguage {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveyLanguages EducatorSurveyLanguage[]
+
+  @@map("lecture_languages")
+}
+
+model EmploymentPreferenceType {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveyPreferences EducatorSurveyEmploymentPreference[]
+
+  @@map("employment_preference_types")
+}
+
+model ProfessionalChallengeType {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  educatorSurveyChallenges EducatorSurveyChallenge[]
+
+  @@map("professional_challenge_types")
+}
+
+// --- Yoga Educator Survey (separate from membership) ---
+
+model EducatorSurvey {
+  id              String @id @default(cuid())
+  referenceNumber String @unique @map("reference_number")
+
+  nameAsPerSsc        String   @map("name_as_per_ssc")
+  fatherOrHusbandName String   @map("father_or_husband_name")
+  genderId            String?  @map("gender_id")
+  mobile              String
+  email               String
+  dateOfBirth         DateTime @map("date_of_birth") @db.Date
+
+  nationalityId String @map("nationality_id")
+  stateId       String @map("state_id")
+  districtId    String @map("district_id")
+  mandalId      String @map("mandal_id")
+  addressLine   String @map("address_line")
+  pincode       String?
+
+  highestYogaQualificationLevelId String @map("highest_yoga_qualification_level_id")
+  yogaQualificationInstitutionName  String @default("") @map("yoga_qualification_institution_name")
+  yogaQualificationYearOfCompletion Int    @default(0) @map("yoga_qualification_year_of_completion")
+  highestYogaQualificationOtherText String? @map("highest_yoga_qualification_other_text")
+  yogaProfessionalTypeId          String @map("yoga_professional_type_id")
+  experienceYears                 Int?   @map("experience_years")
+  experienceMonths                Int?   @map("experience_months")
+  experienceDays                  Int?   @map("experience_days")
+
+  employmentStatusId  String @map("employment_status_id")
+  govWorkInterestId   String @map("gov_work_interest_id")
+  volunteerResponseId String @map("volunteer_response_id")
+
+  consentGivenAt DateTime  @map("consent_given_at")
+  submittedAt    DateTime? @map("submitted_at")
+
+  submissionStatus SurveySubmissionStatus @default(DRAFT) @map("submission_status")
+  reviewStatus     SurveyReviewStatus     @default(NOT_STARTED) @map("review_status")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  gender                        Gender?                @relation(fields: [genderId], references: [id])
+  nationality                   Nationality            @relation(fields: [nationalityId], references: [id])
+  state                         State                  @relation(fields: [stateId], references: [id])
+  district                      District               @relation(fields: [districtId], references: [id])
+  mandal                        Mandal                 @relation(fields: [mandalId], references: [id])
+  highestYogaQualificationLevel YogaQualificationLevel @relation(fields: [highestYogaQualificationLevelId], references: [id])
+  yogaProfessionalType          YogaProfessionalType   @relation(fields: [yogaProfessionalTypeId], references: [id])
+  employmentStatus              EmploymentStatus       @relation(fields: [employmentStatusId], references: [id])
+  govWorkInterest               GovWorkInterestOption  @relation(fields: [govWorkInterestId], references: [id])
+  volunteerResponse             VolunteerResponse      @relation(fields: [volunteerResponseId], references: [id])
+
+  languages             EducatorSurveyLanguage[]
+  yogaQualifications    EducatorSurveyYogaQualification[]
+  employmentPreferences EducatorSurveyEmploymentPreference[]
+  challenges            EducatorSurveyChallenge[]
+  membershipApplications MembershipApplication[]
+
+  @@index([email])
+  @@index([submissionStatus, reviewStatus])
+  @@map("educator_surveys")
+}
+
+model EducatorSurveyYogaQualification {
+  id                       String  @id @default(cuid())
+  educatorSurveyId         String  @map("educator_survey_id")
+  yogaQualificationLevelId String  @map("yoga_qualification_level_id")
+  otherText                String? @map("other_text")
+  institutionName          String  @map("institution_name")
+  yearOfCompletion         Int     @map("year_of_completion")
+  sortOrder                Int     @default(0) @map("sort_order")
+
+  educatorSurvey         EducatorSurvey         @relation(fields: [educatorSurveyId], references: [id], onDelete: Cascade)
+  yogaQualificationLevel YogaQualificationLevel @relation(fields: [yogaQualificationLevelId], references: [id])
+
+  @@index([educatorSurveyId])
+  @@map("educator_survey_yoga_qualifications")
+}
+
+model EducatorSurveyLanguage {
+  educatorSurveyId  String  @map("educator_survey_id")
+  languageId        String  @map("language_id")
+  otherLanguageText String? @map("other_language_text")
+
+  educatorSurvey EducatorSurvey  @relation(fields: [educatorSurveyId], references: [id], onDelete: Cascade)
+  language       LectureLanguage @relation(fields: [languageId], references: [id])
+
+  @@id([educatorSurveyId, languageId])
+  @@map("educator_survey_languages")
+}
+
+model EducatorSurveyEmploymentPreference {
+  educatorSurveyId String @map("educator_survey_id")
+  preferenceTypeId String @map("preference_type_id")
+
+  educatorSurvey EducatorSurvey         @relation(fields: [educatorSurveyId], references: [id], onDelete: Cascade)
+  preferenceType EmploymentPreferenceType @relation(fields: [preferenceTypeId], references: [id])
+
+  @@id([educatorSurveyId, preferenceTypeId])
+  @@map("educator_survey_employment_preferences")
+}
+
+model EducatorSurveyChallenge {
+  educatorSurveyId String @map("educator_survey_id")
+  challengeTypeId  String @map("challenge_type_id")
+
+  educatorSurvey EducatorSurvey            @relation(fields: [educatorSurveyId], references: [id], onDelete: Cascade)
+  challengeType  ProfessionalChallengeType @relation(fields: [challengeTypeId], references: [id])
+
+  @@id([educatorSurveyId, challengeTypeId])
+  @@map("educator_survey_challenges")
+}
+
+// --- Membership (separate from educator survey) ---
+
+model StoredFile {
+  id               String   @id @default(cuid())
+  storageKey       String   @unique @map("storage_key")
+  originalFilename String   @map("original_filename")
+  mimeType         String   @map("mime_type")
+  byteSize         Int      @map("byte_size")
+  checksumSha256   String?  @map("checksum_sha256")
+  uploadedAt       DateTime @default(now()) @map("uploaded_at")
+
+  membershipPhotoApps       MembershipApplication[] @relation("MembershipPhoto")
+  membershipIdentityApps    MembershipApplication[] @relation("MembershipIdentity")
+  memberPhotos              Member[]                @relation("MemberPhoto")
+  memberIdentity            Member[]                @relation("MemberIdentity")
+  memberCards               Member[]                @relation("MemberCard")
+  expenseSupportingBills  ExpenseVoucher[]
+  teamMemberPhotos        TeamMember[]           @relation("TeamMemberPhoto")
+
+  @@map("stored_files")
+}
+
+model MembershipApplication {
+  id                 String @id @default(cuid())
+  applicationReference String @unique @map("application_reference")
+
+  fullName String @map("full_name")
+  age      Int
+  mobile   String
+  email    String
+
+  stateId    String @map("state_id")
+  districtId String @map("district_id")
+  mandalId   String @map("mandal_id")
+  addressLine String @map("address_line")
+
+  highestYogaQualificationLevelId String  @map("highest_yoga_qualification_level_id")
+  instituteName                   String  @map("institute_name")
+  yearOfPassing                   Int     @map("year_of_passing")
+  highestYogaQualificationOtherText String? @map("highest_yoga_qualification_other_text")
+
+  photoFileId       String @map("photo_file_id")
+  identityProofFileId String @map("identity_proof_file_id")
+
+  paymentReference String        @map("payment_reference")
+  paymentDate      DateTime      @map("payment_date") @db.Date
+  amountPaid       Decimal       @map("amount_paid") @db.Decimal(12, 2)
+  paymentMethod    PaymentMethod @default(ONLINE) @map("payment_method")
+
+  applicationStatus MembershipApplicationStatus @default(SUBMITTED) @map("application_status")
+  paymentStatus     MembershipPaymentStatus     @default(PENDING) @map("payment_status")
+
+  declarationConsentAt  DateTime @map("declaration_consent_at")
+  privacyNoticeVersion  String   @map("privacy_notice_version")
+
+  educatorSurveyId String? @map("educator_survey_id")
+  educatorSurvey   EducatorSurvey? @relation(fields: [educatorSurveyId], references: [id])
+
+  reviewedByUserId String?   @map("reviewed_by_user_id")
+  reviewedAt       DateTime? @map("reviewed_at")
+  adminRemarks     String?   @map("admin_remarks")
+
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  state                         State                  @relation(fields: [stateId], references: [id])
+  district                      District               @relation(fields: [districtId], references: [id])
+  mandal                        Mandal                 @relation(fields: [mandalId], references: [id])
+  highestYogaQualificationLevel YogaQualificationLevel @relation(fields: [highestYogaQualificationLevelId], references: [id])
+  photoFile                     StoredFile             @relation("MembershipPhoto", fields: [photoFileId], references: [id])
+  identityProofFile             StoredFile             @relation("MembershipIdentity", fields: [identityProofFileId], references: [id])
+  reviewedBy                    User?                  @relation("MembershipReviewedBy", fields: [reviewedByUserId], references: [id])
+
+  member              Member?
+  paymentRecords      PaymentRecord[]
+  yogaQualifications  MembershipApplicationYogaQualification[]
+
+  @@index([email])
+  @@index([applicationStatus, paymentStatus])
+  @@map("membership_applications")
+}
+
+model MembershipApplicationYogaQualification {
+  id                       String  @id @default(cuid())
+  membershipApplicationId  String  @map("membership_application_id")
+  yogaQualificationLevelId String  @map("yoga_qualification_level_id")
+  otherText                String? @map("other_text")
+  institutionName          String  @map("institution_name")
+  yearOfCompletion         Int     @map("year_of_completion")
+  sortOrder                Int     @default(0) @map("sort_order")
+
+  membershipApplication  MembershipApplication  @relation(fields: [membershipApplicationId], references: [id], onDelete: Cascade)
+  yogaQualificationLevel YogaQualificationLevel @relation(fields: [yogaQualificationLevelId], references: [id])
+
+  @@index([membershipApplicationId])
+  @@map("membership_application_yoga_qualifications")
+}
+
+model Member {
+  id               String @id @default(cuid())
+  membershipNumber String @unique @map("membership_number")
+
+  membershipApplicationId String @unique @map("membership_application_id")
+  userId                  String? @unique @map("user_id")
+
+  fullName       String @map("full_name")
+  email          String
+  mobile         String
+  photoFileId    String @map("photo_file_id")
+  identityProofFileId String @map("identity_proof_file_id")
+
+  membershipType   String?      @map("membership_type")
+  membershipStatus MemberStatus @default(ACTIVE) @map("membership_status")
+
+  approvalDate          DateTime @map("approval_date") @db.Date
+  membershipStartDate   DateTime @map("membership_start_date") @db.Date
+  membershipExpiryDate  DateTime @map("membership_expiry_date") @db.Date
+
+  renewalEnabled Boolean @default(false) @map("renewal_enabled")
+
+  membershipCardFileId String? @map("membership_card_file_id")
+  lastRenewalApplicationId String? @map("last_renewal_application_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  membershipApplication MembershipApplication @relation(fields: [membershipApplicationId], references: [id])
+  user                  User?                 @relation(fields: [userId], references: [id])
+  photoFile             StoredFile            @relation("MemberPhoto", fields: [photoFileId], references: [id])
+  identityProofFile     StoredFile            @relation("MemberIdentity", fields: [identityProofFileId], references: [id])
+  membershipCardFile    StoredFile?           @relation("MemberCard", fields: [membershipCardFileId], references: [id])
+
+  renewalApplications RenewalApplication[]
+  paymentRecords      PaymentRecord[]
+  subscriptionEnrollments SubscriptionEnrollment[]
+  eventRegistrations  EventRegistration[]
+
+  @@index([email])
+  @@map("members")
+}
+
+model RenewalApplication {
+  id               String @id @default(cuid())
+  renewalReference String @unique @map("renewal_reference")
+
+  memberId String @map("member_id")
+
+  submittedAt        DateTime @default(now()) @map("submitted_at")
+  previousExpiryDate DateTime @map("previous_expiry_date") @db.Date
+
+  renewalFee       Decimal       @map("renewal_fee") @db.Decimal(12, 2)
+  paymentReference String        @map("payment_reference")
+  paymentDate      DateTime      @map("payment_date") @db.Date
+  paymentMethod    PaymentMethod @default(ONLINE) @map("payment_method")
+
+  renewalStatus RenewalApplicationStatus @default(SUBMITTED) @map("renewal_status")
+  paymentStatus MembershipPaymentStatus  @default(PENDING) @map("payment_status")
+
+  reviewedByUserId String?   @map("reviewed_by_user_id")
+  reviewedAt       DateTime? @map("reviewed_at")
+  adminRemarks     String?   @map("admin_remarks")
+
+  newStartDate  DateTime? @map("new_start_date") @db.Date
+  newExpiryDate DateTime? @map("new_expiry_date") @db.Date
+
+  member         Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  paymentRecords PaymentRecord[]
+
+  @@index([memberId, renewalStatus])
+  @@map("renewal_applications")
+}
+
+model PaymentRecord {
+  id             String @id @default(cuid())
+  receiptNumber  String @unique @map("receipt_number")
+
+  memberId                String? @map("member_id")
+  membershipApplicationId String? @map("membership_application_id")
+  renewalApplicationId    String? @map("renewal_application_id")
+  eventRegistrationId     String? @map("event_registration_id")
+
+  name    String
+  mobile  String
+  address String
+
+  paymentDate      DateTime @map("payment_date") @db.Date
+  paymentReference String   @map("payment_reference")
+  amountPaid       Decimal  @map("amount_paid") @db.Decimal(12, 2)
+
+  paymentCategory    PaymentCategory     @map("payment_category")
+  paymentMethod      PaymentMethod       @default(ONLINE) @map("payment_method")
+  subscriptionBasis  SubscriptionBasis?  @map("subscription_basis")
+  programId          String?             @map("program_id")
+  eventId            String?             @map("event_id")
+  subscriptionEnrollmentId String?       @map("subscription_enrollment_id")
+
+  panOfRemitter        String? @map("pan_of_remitter")
+  purposeOfRemittance  String? @map("purpose_of_remittance")
+  applicationRefNo     String? @map("application_ref_no")
+  aadharNumber         String? @map("aadhar_number")
+
+  verificationStatus PaymentVerificationStatus @default(PENDING) @map("verification_status")
+  verifiedByUserId     String?                   @map("verified_by_user_id")
+  verifiedAt           DateTime?                 @map("verified_at")
+  remarks              String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  member                Member?                @relation(fields: [memberId], references: [id])
+  membershipApplication MembershipApplication? @relation(fields: [membershipApplicationId], references: [id])
+  renewalApplication    RenewalApplication?    @relation(fields: [renewalApplicationId], references: [id])
+  eventRegistration     EventRegistration?     @relation(fields: [eventRegistrationId], references: [id])
+  program               Program?               @relation(fields: [programId], references: [id])
+  event                 Event?                 @relation(fields: [eventId], references: [id])
+  subscriptionEnrollment SubscriptionEnrollment? @relation(fields: [subscriptionEnrollmentId], references: [id])
+  verifiedBy            User?                  @relation("PaymentVerifiedBy", fields: [verifiedByUserId], references: [id])
+
+  @@index([paymentReference])
+  @@index([paymentCategory, paymentDate])
+  @@index([verificationStatus, paymentDate])
+  @@map("payment_records")
+}
+
+model Program {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  title       String
+  description String?
+  defaultFee  Decimal?  @map("default_fee") @db.Decimal(12, 2)
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  events                Event[]
+  subscriptionPlans     SubscriptionPlan[]
+  paymentRecords        PaymentRecord[]
+  expenseVouchers       ExpenseVoucher[]
+  subscriptionEnrollments SubscriptionEnrollment[]
+
+  @@map("programs")
+}
+
+model Event {
+  id                   String    @id @default(cuid())
+  code                 String    @unique
+  title                String
+  description          String?   @db.Text
+  programId            String?   @map("program_id")
+  eventDate            DateTime? @map("event_date") @db.Date
+  venue                String?
+  defaultFee           Decimal?  @map("default_fee") @db.Decimal(12, 2)
+  registrationOpen     Boolean   @default(false) @map("registration_open")
+  registrationClosesAt DateTime? @map("registration_closes_at")
+  isActive             Boolean   @default(true) @map("is_active")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  program               Program?               @relation(fields: [programId], references: [id])
+  subscriptionPlans     SubscriptionPlan[]
+  paymentRecords        PaymentRecord[]
+  subscriptionEnrollments SubscriptionEnrollment[]
+  registrations         EventRegistration[]
+
+  @@index([registrationOpen, isActive])
+  @@map("events")
+}
+
+model EventRegistration {
+  id                    String                  @id @default(cuid())
+  registrationReference String                  @unique @map("registration_reference")
+
+  eventId String @map("event_id")
+  userId  String? @map("user_id")
+  memberId String? @map("member_id")
+
+  fullName    String  @map("full_name")
+  email       String
+  mobile      String
+  addressLine String  @map("address_line")
+
+  paymentReference String        @map("payment_reference")
+  paymentDate      DateTime      @map("payment_date") @db.Date
+  amountPaid       Decimal       @map("amount_paid") @db.Decimal(12, 2)
+  paymentMethod    PaymentMethod @default(ONLINE) @map("payment_method")
+
+  registrationStatus EventRegistrationStatus   @default(SUBMITTED) @map("registration_status")
+  paymentStatus      MembershipPaymentStatus   @default(PENDING) @map("payment_status")
+
+  reviewedByUserId String?   @map("reviewed_by_user_id")
+  reviewedAt       DateTime? @map("reviewed_at")
+  adminRemarks     String?   @map("admin_remarks")
+
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  event        Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  user         User?           @relation("EventRegistrationSubmitter", fields: [userId], references: [id], onDelete: SetNull)
+  member       Member?         @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  reviewedBy   User?           @relation("EventRegistrationReviewedBy", fields: [reviewedByUserId], references: [id])
+  paymentRecords PaymentRecord[]
+
+  @@index([eventId, registrationStatus])
+  @@index([paymentStatus, submittedAt])
+  @@index([email, eventId])
+  @@map("event_registrations")
+}
+
+model SubscriptionPlan {
+  id              String            @id @default(cuid())
+  code            String            @unique
+  title           String
+  basis           SubscriptionBasis
+  programId       String?           @map("program_id")
+  eventId         String?           @map("event_id")
+  durationMonths  Int               @default(12) @map("duration_months")
+  fee             Decimal           @db.Decimal(12, 2)
+  isActive        Boolean           @default(true) @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  program     Program? @relation(fields: [programId], references: [id])
+  event       Event?   @relation(fields: [eventId], references: [id])
+  enrollments SubscriptionEnrollment[]
+
+  @@map("subscription_plans")
+}
+
+model SubscriptionEnrollment {
+  id        String                     @id @default(cuid())
+  planId    String                     @map("plan_id")
+  memberId  String?                    @map("member_id")
+  payerName String                     @map("payer_name")
+  payerMobile String                   @map("payer_mobile")
+  payerEmail  String?                  @map("payer_email")
+  programId String?                    @map("program_id")
+  eventId   String?                    @map("event_id")
+  startDate DateTime                   @map("start_date") @db.Date
+  endDate   DateTime                   @map("end_date") @db.Date
+  status    SubscriptionEnrollmentStatus @default(ACTIVE)
+  createdAt DateTime                   @default(now()) @map("created_at")
+  updatedAt DateTime                   @updatedAt @map("updated_at")
+
+  plan           SubscriptionPlan @relation(fields: [planId], references: [id])
+  member         Member?          @relation(fields: [memberId], references: [id])
+  program        Program?         @relation(fields: [programId], references: [id])
+  event          Event?           @relation(fields: [eventId], references: [id])
+  paymentRecords PaymentRecord[]
+
+  @@index([memberId, status])
+  @@map("subscription_enrollments")
+}
+
+model AdminSetting {
+  key       String @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_settings")
+}
+
+model EmailLog {
+  id             String         @id @default(cuid())
+  recipientEmail String         @map("recipient_email")
+  eventType      String         @map("event_type")
+  status         EmailLogStatus @default(QUEUED)
+  sentAt         DateTime?      @map("sent_at")
+  errorMessage   String?        @map("error_message")
+  payloadJson    Json?          @map("payload_json")
+
+  membershipApplicationId String? @map("membership_application_id")
+  renewalApplicationId    String? @map("renewal_application_id")
+  memberId                String? @map("member_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("email_logs")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?  @map("actor_user_id")
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  payloadJson Json?    @map("payload_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorUserId], references: [id])
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model ExpenseVoucher {
+  id                   String               @id @default(cuid())
+  voucherNumber        String               @unique @map("voucher_number")
+  expenseCategory      ExpenseCategory      @map("expense_category")
+  status               ExpenseVoucherStatus @default(SUBMITTED)
+  expenseDate          DateTime             @map("expense_date") @db.Date
+  description          String
+  amount               Decimal              @db.Decimal(12, 2)
+  paymentMethod        PaymentMethod        @map("payment_method")
+  paidTo               String               @map("paid_to")
+  transactionRef       String?              @map("transaction_ref")
+  supportingBillNo     String?              @map("supporting_bill_no")
+  supportingBillFileId String?              @map("supporting_bill_file_id")
+  programId            String?              @map("program_id")
+  enteredByUserId      String?              @map("entered_by_user_id")
+  approvedByUserId     String?              @map("approved_by_user_id")
+  approvedAt           DateTime?            @map("approved_at")
+  remarks              String?
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  supportingBillFile StoredFile? @relation(fields: [supportingBillFileId], references: [id])
+  program            Program?    @relation(fields: [programId], references: [id])
+  enteredBy          User?       @relation("ExpenseEnteredBy", fields: [enteredByUserId], references: [id])
+  approvedBy         User?       @relation("ExpenseApprovedBy", fields: [approvedByUserId], references: [id])
+
+  @@index([expenseCategory, expenseDate])
+  @@index([status, expenseDate])
+  @@map("expense_vouchers")
+}
+
+// --- APYEA public team (separate from membership / educator survey) ---
+
+enum TeamMemberDesignation {
+  PRESIDENT
+  VICE_PRESIDENT
+  SECRETARY
+  TREASURER
+  EXECUTIVE_MEMBER
+  ADVISORY_MEMBER
+  DISTRICT_COORDINATOR
+  UNIT_COORDINATOR
+  MEMBER
+}
+
+model TeamMember {
+  id            String                @id @default(cuid())
+  fullName      String                @map("full_name")
+  designation   TeamMemberDesignation
+  qualification String?               @db.Text
+  photoFileId   String?               @map("photo_file_id")
+  displayOrder  Int                   @default(0) @map("display_order")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+
+  photoFile StoredFile? @relation("TeamMemberPhoto", fields: [photoFileId], references: [id], onDelete: SetNull)
+
+  @@index([displayOrder, fullName])
+  @@map("team_members")
+}
