@@ -460,6 +460,7 @@ model EducatorSurveyChallenge {
 model StoredFile {
   id               String   @id @default(cuid())
   storageKey       String   @unique @map("storage_key")
+  blobUrl          String?  @map("blob_url")
   originalFilename String   @map("original_filename")
   mimeType         String   @map("mime_type")
   byteSize         Int      @map("byte_size")

@@ -1,19 +1,17 @@
-import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-
-const UPLOAD_ROOT = path.join(process.cwd(), "uploads");
+import { writePrivateBlob } from "@/lib/uploads/storage-backend";
 
 export async function savePrivateUpload(
   folder: string,
   file: File,
-): Promise<{ storageKey: string; byteSize: number; checksumSha256: string }> {
+): Promise<{
+  storageKey: string;
+  byteSize: number;
+  checksumSha256: string;
+  blobUrl: string | null;
+}> {
   const bytes = Buffer.from(await file.arrayBuffer());
-  const checksumSha256 = createHash("sha256").update(bytes).digest("hex");
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const storageKey = `${folder}/${Date.now()}-${safeName}`;
-  const fullPath = path.join(UPLOAD_ROOT, storageKey);
-  await mkdir(path.dirname(fullPath), { recursive: true });
-  await writeFile(fullPath, bytes);
-  return { storageKey, byteSize: bytes.length, checksumSha256 };
+  const mimeType = file.type || "application/octet-stream";
+  return writePrivateBlob(storageKey, bytes, mimeType);
 }

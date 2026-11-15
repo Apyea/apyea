@@ -1,9 +1,8 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { financeUserOrResponse } from "@/lib/auth/finance-gate";
 import { staffUserOrResponse } from "@/lib/auth/staff-gate";
 import { prisma } from "@/lib/db";
+import { readPrivateBlob } from "@/lib/uploads/storage-backend";
 
 type Params = { params: Promise<{ path: string[] }> };
 
@@ -40,10 +39,12 @@ export async function GET(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const filePath = path.join(process.cwd(), "uploads", storageKey);
   try {
-    const data = await readFile(filePath);
-    return new NextResponse(data, {
+    const data = await readPrivateBlob({
+      storageKey: stored.storageKey,
+      blobUrl: stored.blobUrl,
+    });
+    return new NextResponse(new Uint8Array(data), {
       headers: {
         "Content-Type": stored.mimeType,
         "Cache-Control": "private, max-age=3600",

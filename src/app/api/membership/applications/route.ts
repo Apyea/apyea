@@ -20,6 +20,7 @@ async function storeUploadedFile(file: File, folder: string) {
   return prisma.storedFile.create({
     data: {
       storageKey: saved.storageKey,
+      blobUrl: saved.blobUrl,
       originalFilename: file.name,
       mimeType: file.type || "application/octet-stream",
       byteSize: saved.byteSize,
