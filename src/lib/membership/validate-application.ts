@@ -15,12 +15,14 @@ import {
   normalizeYogaQualificationRows,
   validateYogaQualificationRowsStructure,
 } from "@/lib/yoga-qualifications";
-import { parsePaymentMethod } from "@/lib/finance/labels";
+import { validateTeacherInterest } from "@/lib/forms/teacher-interest";
+import { prisma } from "@/lib/db";
+import type { PaymentMethod } from "@prisma/client";
 import type { MembershipApplicationSubmitInput } from "@/lib/membership/application-payload";
 
-export function validateMembershipApplicationInput(
+export async function validateMembershipApplicationInput(
   body: MembershipApplicationSubmitInput,
-): MembershipApplicationSubmitInput {
+): Promise<MembershipApplicationSubmitInput> {
   throwIfValidationError(
     firstValidationError(
       personNameError(body.fullName, "Full name"),
@@ -44,9 +46,20 @@ export function validateMembershipApplicationInput(
   const yogaQualifications = normalizeYogaQualificationRows(body.yogaQualifications);
   validateYogaQualificationRowsStructure(yogaQualifications);
 
-  const paymentMethod = parsePaymentMethod(body.paymentMethod) ?? "ONLINE";
+  const govOptions = await prisma.govWorkInterestOption.findMany({
+    select: { id: true, code: true },
+  });
+  const codeById = (id: string) => govOptions.find((o) => o.id === id)?.code;
+  throwIfValidationError(validateTeacherInterest(body.teacherInterest, codeById));
 
-  return { ...body, yogaQualifications, paymentMethod };
+  if (body.subscriptionPlanId) {
+    const plan = await prisma.subscriptionPlan.findFirst({
+      where: { id: body.subscriptionPlanId, isActive: true, basis: "MEMBERSHIP" },
+    });
+    if (!plan) throw new Error("Selected subscription category is not available");
+  }
+
+  return { ...body, yogaQualifications, paymentMethod: "ONLINE" as PaymentMethod };
 }
 
 /** Client-side: returns first error message or null. */

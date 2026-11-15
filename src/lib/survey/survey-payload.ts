@@ -14,7 +14,8 @@ import {
   validateSurveyLocationFields,
   validateSurveyOpportunitiesFields,
   validateSurveyPersonalFields,
-  validateSurveyReviewFields,
+  validateSurveyChallengesFields,
+  validateSurveyConsentFields,
 } from "@/lib/survey/validate-survey";
 import { firstValidationError, requiredSelectError, throwIfValidationError } from "@/lib/validation";
 
@@ -114,7 +115,8 @@ export function parseSurveyPayload(
   validateYogaQualificationRowsStructure(yogaQualifications);
 
   if (requireConsent) {
-    throwIfValidationError(validateSurveyReviewFields({ challengeTypeIds: body.challengeTypeIds, consent: Boolean(body.consent) }));
+    throwIfValidationError(validateSurveyChallengesFields({ challengeTypeIds: body.challengeTypeIds }));
+    throwIfValidationError(validateSurveyConsentFields({ consent: Boolean(body.consent) }));
   } else if (!body.challengeTypeIds?.length) {
     throw new Error("Select at least one challenge");
   }

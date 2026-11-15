@@ -7,7 +7,7 @@ export type PublicNavItem = {
 export const PUBLIC_SITE_NAV: PublicNavItem[] = [
   { href: "/", label: "Home" },
   { href: "/team", label: "Our Team" },
-  { href: "/events", label: "Events" },
+  { href: "/events", label: "Programmes" },
   { href: "/membership/apply", label: "Membership" },
   { href: "/survey", label: "Yoga Educators" },
   { href: "/login", label: "Sign in" },

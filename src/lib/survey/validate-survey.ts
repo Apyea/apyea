@@ -87,12 +87,12 @@ export function validateSurveyOpportunitiesFields(fields: {
   );
 }
 
-export function validateSurveyReviewFields(fields: {
+export function validateSurveyChallengesFields(fields: {
   challengeTypeIds: string[];
-  consent: boolean;
 }): string | null {
-  return firstValidationError(
-    nonEmptySelectionError(fields.challengeTypeIds, "Select at least one challenge"),
-    fields.consent ? null : "Consent is required",
-  );
+  return nonEmptySelectionError(fields.challengeTypeIds, "Select at least one challenge");
+}
+
+export function validateSurveyConsentFields(fields: { consent: boolean }): string | null {
+  return fields.consent ? null : "Consent is required";
 }

@@ -26,6 +26,11 @@ import {
 } from "@/components/survey/SurveyYogaQualificationsEditor";
 import { membershipApplicationFormError } from "@/lib/membership/validate-application";
 import {
+  EMPTY_TEACHER_INTEREST,
+  YogaTeacherInterestSection,
+} from "@/components/forms/YogaTeacherInterestSection";
+import { validateTeacherInterest } from "@/lib/forms/teacher-interest";
+import {
   normalizeYogaQualificationRows,
   validateYogaQualificationRowsStructure,
   YOGA_QUALIFICATION_OTHERS_CODE,
@@ -57,7 +62,8 @@ type MembershipFormValues = {
   paymentReference: string;
   paymentDate: string;
   amountPaid: string;
-  paymentMethod: string;
+  subscriptionPlanId: string;
+  teacherInterest: typeof EMPTY_TEACHER_INTEREST;
   consent: boolean;
 };
 
@@ -78,7 +84,8 @@ const defaultValues: MembershipFormValues = {
   paymentReference: "",
   paymentDate: "",
   amountPaid: "",
-  paymentMethod: "ONLINE",
+  subscriptionPlanId: "",
+  teacherInterest: { ...EMPTY_TEACHER_INTEREST },
   consent: false,
 };
 
@@ -86,7 +93,13 @@ export function MembershipApplyForm() {
   const [master, setMaster] = useState<{
     states: Lookup[];
     yogaQualificationLevels: Lookup[];
+    govWorkInterestOptions: Lookup[];
+    lectureLanguages: Lookup[];
+    employmentPreferenceTypes: Lookup[];
   } | null>(null);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<
+    { id: string; title: string; code: string; fee: number }[]
+  >([]);
   const [districts, setDistricts] = useState<Lookup[]>([]);
   const [mandals, setMandals] = useState<Lookup[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -115,6 +128,14 @@ export function MembershipApplyForm() {
       }
       if (!photo || !identityProof) {
         setSubmitError("Photo and identity proof are required");
+        return;
+      }
+      const teacherErr = validateTeacherInterest(
+        value.teacherInterest,
+        (id) => master?.govWorkInterestOptions.find((o) => o.id === id)?.code,
+      );
+      if (teacherErr) {
+        setSubmitError(teacherErr);
         return;
       }
 
@@ -152,7 +173,9 @@ export function MembershipApplyForm() {
           paymentReference: value.paymentReference,
           paymentDate: value.paymentDate,
           amountPaid: Number(value.amountPaid),
-          paymentMethod: value.paymentMethod,
+          paymentMethod: "ONLINE",
+          subscriptionPlanId: value.subscriptionPlanId || undefined,
+          teacherInterest: value.teacherInterest,
           consent: true,
         };
         const body = new FormData();
@@ -173,14 +196,20 @@ export function MembershipApplyForm() {
   });
 
   useEffect(() => {
-    void fetch("/api/master")
-      .then((r) => r.json())
-      .then((data) =>
+    void Promise.all([fetch("/api/master"), fetch("/api/membership/subscription-plans")]).then(
+      async ([masterRes, plansRes]) => {
+        const data = await masterRes.json();
+        const plansData = await plansRes.json();
         setMaster({
           states: data.states ?? [],
           yogaQualificationLevels: data.yogaQualificationLevels ?? [],
-        }),
-      );
+          govWorkInterestOptions: data.govWorkInterestOptions ?? [],
+          lectureLanguages: data.lectureLanguages ?? [],
+          employmentPreferenceTypes: data.employmentPreferenceTypes ?? [],
+        });
+        setSubscriptionPlans(plansData.plans ?? []);
+      },
+    );
   }, []);
 
   const loadDistricts = useCallback(async (stateId: string) => {
@@ -394,6 +423,39 @@ export function MembershipApplyForm() {
           </FieldGrid>
         </StepCard>
 
+        <StepCard label="Subscription category (optional)">
+          <FieldGrid>
+            <ApyeaSelectField formApi={form} name="subscriptionPlanId" label="Membership plan">
+              <option value="">Not sure / decide later</option>
+              {subscriptionPlans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title} ({p.code}) — ₹{p.fee.toLocaleString("en-IN")}
+                </option>
+              ))}
+            </ApyeaSelectField>
+          </FieldGrid>
+        </StepCard>
+
+        {master ? (
+          <StepCard label="Yoga teaching interests">
+            <FieldGrid>
+              <form.Subscribe selector={(s) => s.values.teacherInterest}>
+                {(teacherInterest) => (
+                  <YogaTeacherInterestSection
+                    value={teacherInterest}
+                    onChange={(teacherInterestValue) =>
+                      form.setFieldValue("teacherInterest", teacherInterestValue)
+                    }
+                    govWorkInterestOptions={master.govWorkInterestOptions}
+                    lectureLanguages={master.lectureLanguages}
+                    employmentPreferenceTypes={master.employmentPreferenceTypes}
+                  />
+                )}
+              </form.Subscribe>
+            </FieldGrid>
+          </StepCard>
+        ) : null}
+
         <StepCard label="Membership payment">
           <FieldGrid>
             <ApyeaTextField
@@ -424,12 +486,9 @@ export function MembershipApplyForm() {
                 onBlur: fieldValidatorNumber((v) => amountPaidError(v)),
               }}
             />
-            <ApyeaSelectField formApi={form} name="paymentMethod" label="Payment method">
-              <option value="ONLINE">Online / UPI</option>
-              <option value="CASH">Cash</option>
-              <option value="CHEQUE">Cheque</option>
-              <option value="BANK_TRANSFER">Bank transfer</option>
-            </ApyeaSelectField>
+            <p className="sm:col-span-2 text-sm text-[#5F7A66]">
+              Payments are recorded as online (UPI / net banking).
+            </p>
           </FieldGrid>
         </StepCard>
 

@@ -33,6 +33,8 @@ export async function POST(request: NextRequest) {
       eventDate: body.eventDate ? new Date(String(body.eventDate)) : undefined,
       venue: body.venue ? String(body.venue) : undefined,
       defaultFee: body.defaultFee !== undefined ? Number(body.defaultFee) : undefined,
+      memberFee: body.memberFee !== undefined ? Number(body.memberFee) : undefined,
+      nonMemberFee: body.nonMemberFee !== undefined ? Number(body.nonMemberFee) : undefined,
       registrationOpen: body.registrationOpen === true,
       registrationClosesAt: body.registrationClosesAt
         ? new Date(String(body.registrationClosesAt))

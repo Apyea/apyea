@@ -1,3 +1,5 @@
+import type { TeacherInterestPayload } from "@/lib/forms/teacher-interest";
+import { validateTeacherInterest } from "@/lib/forms/teacher-interest";
 import {
   addressLineError,
   amountPaidError,
@@ -21,6 +23,7 @@ export type EventRegistrationInput = {
   paymentDate: string;
   amountPaid: string;
   consent: boolean;
+  teacherInterest: TeacherInterestPayload;
 };
 
 export type EventRegistrationField = keyof Omit<EventRegistrationInput, "eventId" | "consent">;
@@ -69,7 +72,10 @@ export function collectEventRegistrationFieldErrors(
   return errors;
 }
 
-export function validateEventRegistrationInput(input: EventRegistrationInput) {
+export function validateEventRegistrationInput(
+  input: EventRegistrationInput,
+  options?: { govInterestCodeById?: (id: string) => string | undefined },
+) {
   const amount = Number.parseFloat(input.amountPaid);
   throwIfValidationError(
     firstValidationError(
@@ -82,6 +88,9 @@ export function validateEventRegistrationInput(input: EventRegistrationInput) {
       paymentDateError(input.paymentDate),
       amountPaidError(amount),
       !input.consent ? "You must agree to proceed" : null,
+      options?.govInterestCodeById
+        ? validateTeacherInterest(input.teacherInterest, options.govInterestCodeById)
+        : null,
     ),
   );
 

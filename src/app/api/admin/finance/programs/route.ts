@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { ProgramCategory } from "@prisma/client";
 import { financeJson, financeUserOrResponse } from "@/lib/auth/finance-gate";
 import { createProgram, listPrograms } from "@/lib/finance/catalog";
 
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
       code: String(body.code),
       title: String(body.title),
       description: body.description ? String(body.description) : undefined,
+      category: body.category ? (String(body.category) as ProgramCategory) : undefined,
       defaultFee: body.defaultFee !== undefined ? Number(body.defaultFee) : undefined,
       startDate: body.startDate ? new Date(String(body.startDate)) : undefined,
       endDate: body.endDate ? new Date(String(body.endDate)) : undefined,

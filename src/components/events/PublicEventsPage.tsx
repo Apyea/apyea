@@ -12,7 +12,10 @@ type EventRow = {
   eventDate: string | null;
   venue: string | null;
   defaultFee: number | null;
+  memberFee: number | null;
+  nonMemberFee: number | null;
   programTitle: string | null;
+  programCategory: string | null;
 };
 
 function formatDate(value: string | null) {
@@ -39,13 +42,13 @@ export function PublicEventsPage() {
   return (
     <PublicSiteChrome>
       <p className="mx-auto max-w-6xl px-5 pt-10 text-xs font-semibold uppercase tracking-[0.2em] text-[#5F7A66] lg:px-8">
-        APYEA Events
+        APYEA Programmes
       </p>
       <h1 className="mx-auto mt-2 max-w-6xl px-5 text-3xl font-bold tracking-tight text-[#1B3D32] lg:px-8">
-        Event registrations
+        Programmes
       </h1>
       <p className="mx-auto mt-3 max-w-2xl px-5 text-sm leading-relaxed text-[#5F7A66] lg:px-8">
-        Register for upcoming workshops and programs. Payment is verified by APYEA before confirmation.
+        Training programmes, workshops, seminars, and conferences. Members sign in to register; fees may differ for members and non-members.
       </p>
 
       <div className="mx-auto max-w-6xl px-5 pb-16 pt-10 lg:px-8">

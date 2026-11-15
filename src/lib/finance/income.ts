@@ -15,7 +15,8 @@ export type ManualIncomeInput = {
   mobile: string;
   address: string;
   paymentDate: Date;
-  paymentReference: string;
+  paymentReference?: string;
+  needByDate?: Date;
   amountPaid: number;
   paymentCategory: PaymentCategory;
   paymentMethod: PaymentMethod;
@@ -50,17 +51,20 @@ export async function createManualIncome(
     throw new Error("Invalid income category for manual entry");
   }
 
-  const duplicate = await prisma.paymentRecord.findFirst({
-    where: {
-      paymentReference: input.paymentReference.trim(),
-      verificationStatus: PaymentVerificationStatus.VERIFIED,
-    },
-  });
-  if (duplicate) {
-    throw new Error("Payment reference already verified on another receipt");
+  const ref = input.paymentReference?.trim() ?? "";
+  if (ref) {
+    const duplicate = await prisma.paymentRecord.findFirst({
+      where: {
+        paymentReference: ref,
+        verificationStatus: PaymentVerificationStatus.VERIFIED,
+      },
+    });
+    if (duplicate) {
+      throw new Error("Payment reference already verified on another receipt");
+    }
   }
 
-  const receiptNumber = await generateReceiptNumber();
+  const receiptNumber = autoVerify ? await generateReceiptNumber() : null;
   let subscriptionEnrollmentId: string | undefined;
 
   if (
@@ -98,7 +102,8 @@ export async function createManualIncome(
       mobile: input.mobile.trim(),
       address: input.address.trim(),
       paymentDate: input.paymentDate,
-      paymentReference: input.paymentReference.trim(),
+      needByDate: input.needByDate ?? null,
+      paymentReference: ref || null,
       amountPaid: new Prisma.Decimal(input.amountPaid),
       paymentCategory: input.paymentCategory,
       paymentMethod: input.paymentMethod,
@@ -121,6 +126,54 @@ export async function createManualIncome(
   return record;
 }
 
+export async function updateManualIncome(
+  paymentRecordId: string,
+  input: Partial<ManualIncomeInput>,
+  actorUserId?: string,
+) {
+  const record = await prisma.paymentRecord.findUnique({ where: { id: paymentRecordId } });
+  if (!record) throw new Error("Payment record not found");
+  if (record.verificationStatus !== PaymentVerificationStatus.PENDING) {
+    throw new Error("Only pending income records can be edited");
+  }
+
+  const ref = input.paymentReference !== undefined ? (input.paymentReference?.trim() ?? "") : undefined;
+  if (ref) {
+    const duplicate = await prisma.paymentRecord.findFirst({
+      where: {
+        paymentReference: ref,
+        verificationStatus: PaymentVerificationStatus.VERIFIED,
+        NOT: { id: paymentRecordId },
+      },
+    });
+    if (duplicate) throw new Error("Payment reference already verified on another receipt");
+  }
+
+  const updated = await prisma.paymentRecord.update({
+    where: { id: paymentRecordId },
+    data: {
+      ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+      ...(input.mobile !== undefined ? { mobile: input.mobile.trim() } : {}),
+      ...(input.address !== undefined ? { address: input.address.trim() } : {}),
+      ...(input.paymentDate ? { paymentDate: input.paymentDate } : {}),
+      ...(input.needByDate !== undefined ? { needByDate: input.needByDate ?? null } : {}),
+      ...(ref !== undefined ? { paymentReference: ref || null } : {}),
+      ...(input.amountPaid !== undefined
+        ? { amountPaid: new Prisma.Decimal(input.amountPaid) }
+        : {}),
+      ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
+      ...(input.paymentCategory ? { paymentCategory: input.paymentCategory } : {}),
+      ...(input.purposeOfRemittance !== undefined
+        ? { purposeOfRemittance: input.purposeOfRemittance?.trim() || null }
+        : {}),
+      ...(input.programId !== undefined ? { programId: input.programId || null } : {}),
+      ...(input.eventId !== undefined ? { eventId: input.eventId || null } : {}),
+    },
+  });
+  await logAudit("MANUAL_INCOME_UPDATED", "PaymentRecord", paymentRecordId, {}, actorUserId);
+  return updated;
+}
+
 export async function verifyManualIncome(
   paymentRecordId: string,
   actorUserId?: string,
@@ -132,9 +185,12 @@ export async function verifyManualIncome(
     return record;
   }
 
+  const receiptNumber = record.receiptNumber ?? (await generateReceiptNumber());
+
   const updated = await prisma.paymentRecord.update({
     where: { id: paymentRecordId },
     data: {
+      receiptNumber,
       verificationStatus: PaymentVerificationStatus.VERIFIED,
       verifiedByUserId: actorUserId ?? null,
       verifiedAt: new Date(),

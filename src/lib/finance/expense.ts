@@ -16,6 +16,7 @@ export type ExpenseVoucherInput = {
   paymentMethod: PaymentMethod;
   paidTo: string;
   transactionRef?: string;
+  needByDate?: Date;
   supportingBillNo?: string;
   supportingBillFileId?: string;
   programId?: string;
@@ -26,13 +27,13 @@ export async function createExpenseVoucher(
   input: ExpenseVoucherInput,
   enteredByUserId?: string,
 ) {
-  const voucherNumber = await generateVoucherNumber();
   const voucher = await prisma.expenseVoucher.create({
     data: {
-      voucherNumber,
+      voucherNumber: null,
       expenseCategory: input.expenseCategory,
       status: ExpenseVoucherStatus.SUBMITTED,
       expenseDate: input.expenseDate,
+      needByDate: input.needByDate ?? null,
       description: input.description.trim(),
       amount: new Prisma.Decimal(input.amount),
       paymentMethod: input.paymentMethod,
@@ -65,6 +66,7 @@ export async function updateExpenseVoucher(
     data: {
       ...(input.expenseCategory ? { expenseCategory: input.expenseCategory } : {}),
       ...(input.expenseDate ? { expenseDate: input.expenseDate } : {}),
+      ...(input.needByDate !== undefined ? { needByDate: input.needByDate ?? null } : {}),
       ...(input.description !== undefined ? { description: input.description.trim() } : {}),
       ...(input.amount !== undefined ? { amount: new Prisma.Decimal(input.amount) } : {}),
       ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
@@ -93,9 +95,12 @@ export async function approveExpenseVoucher(id: string, approvedByUserId?: strin
     throw new Error("Voucher is not pending approval");
   }
 
+  const voucherNumber = existing.voucherNumber ?? (await generateVoucherNumber());
+
   const updated = await prisma.expenseVoucher.update({
     where: { id },
     data: {
+      voucherNumber,
       status: ExpenseVoucherStatus.APPROVED,
       approvedByUserId: approvedByUserId ?? null,
       approvedAt: new Date(),

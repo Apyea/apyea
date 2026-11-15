@@ -27,7 +27,7 @@ type CatalogItem = { id: string; code: string; title: string };
 
 type IncomeRow = {
   id: string;
-  receiptNumber: string;
+  receiptNumber: string | null;
   paymentCategory: PaymentCategory;
   verificationStatus: PaymentVerificationStatus;
   paymentDate: string;
@@ -45,6 +45,7 @@ function defaultIncomeForm() {
     mobile: "",
     address: "",
     paymentDate: new Date().toISOString().slice(0, 10),
+    needByDate: "",
     paymentReference: "",
     amountPaid: "",
     paymentMethod: "CASH",
@@ -117,7 +118,7 @@ export function ManualIncomeForm() {
     if (!q) return records;
     return records.filter(
       (r) =>
-        r.receiptNumber.toLowerCase().includes(q) ||
+        (r.receiptNumber ?? "").toLowerCase().includes(q) ||
         r.name.toLowerCase().includes(q) ||
         r.paymentReference.toLowerCase().includes(q) ||
         r.mobile.includes(q),
@@ -149,7 +150,14 @@ export function ManualIncomeForm() {
           programId: form.programId || undefined,
           eventId: form.eventId || undefined,
           subscriptionPlanId:
-            form.paymentCategory === "SUBSCRIPTION_FEE" ? form.subscriptionPlanId : undefined,
+            form.paymentCategory === "SUBSCRIPTION_FEE" && form.subscriptionPlanId
+              ? form.subscriptionPlanId
+              : undefined,
+          needByDate: form.needByDate || undefined,
+          paymentReference:
+            form.paymentMethod === "CASH" && !form.paymentReference.trim()
+              ? undefined
+              : form.paymentReference,
         }),
       });
       const data = await res.json();
@@ -252,7 +260,9 @@ export function ManualIncomeForm() {
             ) : (
               filteredRecords.map((r) => (
                 <tr key={r.id} className="border-b border-zinc-100">
-                  <td className="px-4 py-3 font-mono text-xs">{r.receiptNumber}</td>
+                  <td className="px-4 py-3 font-mono text-xs">
+                    {r.receiptNumber ?? "Pending approval"}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {new Date(r.paymentDate).toLocaleDateString("en-IN")}
                   </td>
@@ -282,6 +292,15 @@ export function ManualIncomeForm() {
                           Reject
                         </button>
                       </span>
+                    ) : r.verificationStatus === "VERIFIED" && r.receiptNumber ? (
+                      <a
+                        href={`/admin/finance/income/print/${r.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#2F4F3A] hover:underline"
+                      >
+                        Print
+                      </a>
                     ) : (
                       "—"
                     )}
@@ -297,7 +316,7 @@ export function ManualIncomeForm() {
         open={modalOpen}
         onClose={closeModal}
         title="Record manual income"
-        description="Saved receipts are verified immediately for reporting."
+        description="Creates a pending record. A receipt number is assigned when an approver verifies it."
         wide
         closeDisabled={saveLoading}
       >
@@ -359,19 +378,27 @@ export function ManualIncomeForm() {
             onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
           />
           <TextField
+            label="Need-by date (optional)"
+            type="date"
+            value={form.needByDate}
+            onChange={(e) => setForm({ ...form, needByDate: e.target.value })}
+          />
+          <TextField
             label="Amount (₹)"
             required
             inputMode="decimal"
             value={form.amountPaid}
             onChange={(e) => setForm({ ...form, amountPaid: e.target.value })}
           />
-          <TextField
-            label="Payment reference"
-            required
-            className="sm:col-span-2"
-            value={form.paymentReference}
-            onChange={(e) => setForm({ ...form, paymentReference: e.target.value })}
-          />
+          {form.paymentMethod !== "CASH" ? (
+            <TextField
+              label="Payment reference"
+              required
+              className="sm:col-span-2"
+              value={form.paymentReference}
+              onChange={(e) => setForm({ ...form, paymentReference: e.target.value })}
+            />
+          ) : null}
           <TextField
             label="Purpose / notes"
             className="sm:col-span-2"
@@ -406,11 +433,12 @@ export function ManualIncomeForm() {
           ) : null}
           {form.paymentCategory === "SUBSCRIPTION_FEE" ? (
             <SelectField
-              label="Subscription plan"
+              label="Subscription plan (optional)"
               value={form.subscriptionPlanId}
               onChange={(value) => setForm({ ...form, subscriptionPlanId: value })}
               placeholder="Select plan"
             >
+              <option value="">None</option>
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.code} — {p.title}

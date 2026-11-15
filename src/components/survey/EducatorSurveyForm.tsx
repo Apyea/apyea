@@ -27,7 +27,8 @@ import {
   validateSurveyLocationFields,
   validateSurveyOpportunitiesFields,
   validateSurveyPersonalFields,
-  validateSurveyReviewFields,
+  validateSurveyChallengesFields,
+  validateSurveyConsentFields,
 } from "@/lib/survey/validate-survey";
 import {
   normalizeYogaQualificationRows,
@@ -66,7 +67,8 @@ const STEPS = [
   { id: "experience", title: "Experience" },
   { id: "employment", title: "Employment" },
   { id: "opportunities", title: "Opportunities" },
-  { id: "review", title: "Review" },
+  { id: "challenges", title: "Challenges" },
+  { id: "declaration", title: "Declaration" },
 ] as const;
 
 function labelOf(item: Lookup) {
@@ -233,10 +235,9 @@ export function EducatorSurveyForm() {
           employmentPreferenceIds: form.employmentPreferenceIds,
         });
       case 6:
-        return validateSurveyReviewFields({
-          challengeTypeIds: form.challengeTypeIds,
-          consent: form.consent,
-        });
+        return validateSurveyChallengesFields({ challengeTypeIds: form.challengeTypeIds });
+      case 7:
+        return validateSurveyConsentFields({ consent: form.consent });
       default:
         return null;
     }
@@ -659,7 +660,7 @@ export function EducatorSurveyForm() {
           )}
 
           {step === 6 && (
-            <StepCard label="Challenges & consent">
+            <StepCard label="Challenges">
               <FieldGrid>
                 <FormField span label="Select all major challenges that apply">
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -675,6 +676,13 @@ export function EducatorSurveyForm() {
                     ))}
                   </div>
                 </FormField>
+              </FieldGrid>
+            </StepCard>
+          )}
+
+          {step === 7 && (
+            <StepCard label="Declaration">
+              <FieldGrid>
                 <FormField span>
                   <CheckboxRow
                     checked={form.consent}

@@ -37,8 +37,15 @@ export async function POST(request: NextRequest) {
   const method = parsePaymentMethod(String(body.paymentMethod ?? ""));
   const amount = Number(body.amountPaid);
 
-  if (!body.name || !body.mobile || !body.paymentReference || !method || !Number.isFinite(amount)) {
+  const paymentReference =
+    body.paymentReference !== undefined && body.paymentReference !== null
+      ? String(body.paymentReference)
+      : "";
+  if (!body.name || !body.mobile || !method || !Number.isFinite(amount)) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+  if (method !== "CASH" && !paymentReference.trim()) {
+    return NextResponse.json({ error: "Payment reference is required for this payment method" }, { status: 400 });
   }
 
   try {
@@ -48,7 +55,8 @@ export async function POST(request: NextRequest) {
         mobile: String(body.mobile),
         address: String(body.address ?? ""),
         paymentDate: new Date(String(body.paymentDate)),
-        paymentReference: String(body.paymentReference),
+        paymentReference: paymentReference.trim() || undefined,
+        needByDate: body.needByDate ? new Date(String(body.needByDate)) : undefined,
         amountPaid: amount,
         paymentCategory: category,
         paymentMethod: method,
@@ -63,7 +71,7 @@ export async function POST(request: NextRequest) {
           : undefined,
       },
       gate.user.id,
-      true,
+      false,
     );
     return financeJson(gate, { record }, { status: 201 });
   } catch (err) {

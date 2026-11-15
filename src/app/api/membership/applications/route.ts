@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentMethod, Prisma } from "@prisma/client";
-import { parsePaymentMethod } from "@/lib/finance/labels";
 import { prisma } from "@/lib/db";
 import {
   type MembershipApplicationSubmitInput,
@@ -12,7 +11,7 @@ import { generateMembershipApplicationReference } from "@/lib/membership/referen
 import { queueEmailLog } from "@/lib/membership/workflow";
 import { validateMembershipApplicationInput } from "@/lib/membership/validate-application";
 
-function parsePayload(raw: unknown): MembershipApplicationSubmitInput {
+async function parsePayload(raw: unknown): Promise<MembershipApplicationSubmitInput> {
   return validateMembershipApplicationInput(raw as MembershipApplicationSubmitInput);
 }
 
@@ -41,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (typeof json !== "string") {
       return NextResponse.json({ error: "Missing data field" }, { status: 400 });
     }
-    const parsed = parsePayload(JSON.parse(json));
+    const parsed = await parsePayload(JSON.parse(json));
     const qualifications = await resolveMembershipYogaQualifications(parsed);
 
     const photo = form.get("photo");
@@ -82,10 +81,9 @@ export async function POST(request: NextRequest) {
         paymentReference: parsed.paymentReference.trim(),
         paymentDate: new Date(parsed.paymentDate),
         amountPaid: new Prisma.Decimal(parsed.amountPaid),
-        paymentMethod:
-          typeof parsed.paymentMethod === "string"
-            ? (parsePaymentMethod(parsed.paymentMethod) ?? PaymentMethod.ONLINE)
-            : (parsed.paymentMethod ?? PaymentMethod.ONLINE),
+        paymentMethod: PaymentMethod.ONLINE,
+        subscriptionPlanId: parsed.subscriptionPlanId || null,
+        teacherInterestJson: parsed.teacherInterest,
         declarationConsentAt: now,
         privacyNoticeVersion: String(privacyNoticeVersion),
         educatorSurveyId: parsed.educatorSurveyId || null,

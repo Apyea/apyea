@@ -11,12 +11,19 @@ export function CatalogManager() {
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const [programForm, setProgramForm] = useState({ code: "", title: "", defaultFee: "" });
+  const [programForm, setProgramForm] = useState({
+    code: "",
+    title: "",
+    category: "TRAINING_PROGRAMME",
+    defaultFee: "",
+  });
   const [eventForm, setEventForm] = useState({
     code: "",
     title: "",
     programId: "",
     defaultFee: "",
+    memberFee: "",
+    nonMemberFee: "",
   });
   const [planForm, setPlanForm] = useState({
     code: "",
@@ -49,12 +56,18 @@ export function CatalogManager() {
     setError(null);
     const body =
       tab === "programs"
-        ? { ...programForm, defaultFee: programForm.defaultFee ? Number(programForm.defaultFee) : undefined }
+        ? {
+            ...programForm,
+            category: programForm.category,
+            defaultFee: programForm.defaultFee ? Number(programForm.defaultFee) : undefined,
+          }
         : tab === "events"
           ? {
               ...eventForm,
               programId: eventForm.programId || undefined,
               defaultFee: eventForm.defaultFee ? Number(eventForm.defaultFee) : undefined,
+              memberFee: eventForm.memberFee ? Number(eventForm.memberFee) : undefined,
+              nonMemberFee: eventForm.nonMemberFee ? Number(eventForm.nonMemberFee) : undefined,
             }
           : {
               ...planForm,
@@ -105,6 +118,18 @@ export function CatalogManager() {
           >
             <TextField label="Code" required value={programForm.code} onChange={(e) => setProgramForm({ ...programForm, code: e.target.value })} />
             <TextField label="Title" required value={programForm.title} onChange={(e) => setProgramForm({ ...programForm, title: e.target.value })} />
+            <SelectField
+              label="Category"
+              value={programForm.category}
+              onChange={(value) => setProgramForm({ ...programForm, category: value })}
+              includeEmptyOption={false}
+            >
+              <option value="TRAINING_PROGRAMME">Training programme</option>
+              <option value="WORKSHOP">Workshop</option>
+              <option value="SEMINAR">Seminar</option>
+              <option value="CONFERENCE">Conference</option>
+              <option value="OTHER">Other</option>
+            </SelectField>
             <TextField label="Default fee (₹)" value={programForm.defaultFee} onChange={(e) => setProgramForm({ ...programForm, defaultFee: e.target.value })} />
             <PrimaryButton type="submit">Create program</PrimaryButton>
           </form>
@@ -112,7 +137,7 @@ export function CatalogManager() {
       ) : null}
 
       {tab === "events" ? (
-        <StepCard label="Add event">
+        <StepCard label="Add programme offering">
           <form
             className="grid gap-3 sm:grid-cols-2"
             onSubmit={(e) => {
@@ -123,7 +148,9 @@ export function CatalogManager() {
             <TextField label="Code" required value={eventForm.code} onChange={(e) => setEventForm({ ...eventForm, code: e.target.value })} />
             <TextField label="Title" required value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} />
             <TextField label="Default fee (₹)" value={eventForm.defaultFee} onChange={(e) => setEventForm({ ...eventForm, defaultFee: e.target.value })} />
-            <PrimaryButton type="submit">Create event</PrimaryButton>
+            <TextField label="Member fee (₹)" value={eventForm.memberFee} onChange={(e) => setEventForm({ ...eventForm, memberFee: e.target.value })} />
+            <TextField label="Non-member fee (₹)" value={eventForm.nonMemberFee} onChange={(e) => setEventForm({ ...eventForm, nonMemberFee: e.target.value })} />
+            <PrimaryButton type="submit">Create programme offering</PrimaryButton>
           </form>
         </StepCard>
       ) : null}

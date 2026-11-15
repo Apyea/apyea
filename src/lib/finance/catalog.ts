@@ -1,4 +1,4 @@
-import { Prisma, SubscriptionBasis } from "@prisma/client";
+import { Prisma, ProgramCategory, SubscriptionBasis } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 export async function listPrograms(activeOnly = false) {
@@ -12,6 +12,7 @@ export async function createProgram(data: {
   code: string;
   title: string;
   description?: string;
+  category?: ProgramCategory;
   defaultFee?: number;
   startDate?: Date;
   endDate?: Date;
@@ -21,6 +22,7 @@ export async function createProgram(data: {
     data: {
       code: data.code.trim().toUpperCase(),
       title: data.title.trim(),
+      category: data.category ?? ProgramCategory.TRAINING_PROGRAMME,
       description: data.description?.trim() || null,
       defaultFee:
         data.defaultFee !== undefined ? new Prisma.Decimal(data.defaultFee) : null,
@@ -75,6 +77,8 @@ export async function createEvent(data: {
   eventDate?: Date;
   venue?: string;
   defaultFee?: number;
+  memberFee?: number;
+  nonMemberFee?: number;
   registrationOpen?: boolean;
   registrationClosesAt?: Date;
   isActive?: boolean;
@@ -89,6 +93,10 @@ export async function createEvent(data: {
       venue: data.venue?.trim() || null,
       defaultFee:
         data.defaultFee !== undefined ? new Prisma.Decimal(data.defaultFee) : null,
+      memberFee:
+        data.memberFee !== undefined ? new Prisma.Decimal(data.memberFee) : null,
+      nonMemberFee:
+        data.nonMemberFee !== undefined ? new Prisma.Decimal(data.nonMemberFee) : null,
       registrationOpen: data.registrationOpen ?? false,
       registrationClosesAt: data.registrationClosesAt ?? null,
       isActive: data.isActive ?? true,
@@ -106,6 +114,8 @@ export async function updateEvent(
     eventDate: Date | null;
     venue: string | null;
     defaultFee: number | null;
+    memberFee: number | null;
+    nonMemberFee: number | null;
     registrationOpen: boolean;
     registrationClosesAt: Date | null;
     isActive: boolean;
@@ -122,6 +132,15 @@ export async function updateEvent(
       ...(data.venue !== undefined ? { venue: data.venue } : {}),
       ...(data.defaultFee !== undefined
         ? { defaultFee: data.defaultFee === null ? null : new Prisma.Decimal(data.defaultFee) }
+        : {}),
+      ...(data.memberFee !== undefined
+        ? { memberFee: data.memberFee === null ? null : new Prisma.Decimal(data.memberFee) }
+        : {}),
+      ...(data.nonMemberFee !== undefined
+        ? {
+            nonMemberFee:
+              data.nonMemberFee === null ? null : new Prisma.Decimal(data.nonMemberFee),
+          }
         : {}),
       ...(data.registrationOpen !== undefined ? { registrationOpen: data.registrationOpen } : {}),
       ...(data.registrationClosesAt !== undefined

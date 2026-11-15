@@ -1,4 +1,5 @@
 import type { PaymentMethod } from "@prisma/client";
+import type { TeacherInterestPayload } from "@/lib/forms/teacher-interest";
 import {
   resolveYogaQualificationRows,
   type YogaQualificationRowInput,
@@ -20,6 +21,8 @@ export type MembershipApplicationSubmitInput = {
   paymentMethod?: PaymentMethod | string;
   consent: boolean;
   educatorSurveyId?: string;
+  subscriptionPlanId?: string;
+  teacherInterest: TeacherInterestPayload;
 };
 
 export async function resolveMembershipYogaQualifications(body: {

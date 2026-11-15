@@ -3,7 +3,7 @@ export const SURVEY_VOLUNTEER_QUESTION_LABEL =
   "Would you be willing to volunteer your services for APYEA activities, including Yoga classes, training programmes, government projects, and community service initiatives?";
 
 export const SURVEY_GOV_TEACHER_QUESTION_LABEL =
-  "Are you interested in working as a Yoga Teacher in a government or public-sector institution?";
+  "Are you interested in working as a Yoga Teacher?";
 
 export const SURVEY_GOV_LANGUAGE_QUESTION_LABEL =
   "Which languages can you use to conduct Yoga lectures, classes, and training programmes?";

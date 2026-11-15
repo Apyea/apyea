@@ -16,12 +16,20 @@ import {
   eventRegistrationFieldError,
   type EventRegistrationField,
 } from "@/lib/events/validate-registration";
+import {
+  EMPTY_TEACHER_INTEREST,
+  YogaTeacherInterestSection,
+} from "@/components/forms/YogaTeacherInterestSection";
+import { validateTeacherInterest } from "@/lib/forms/teacher-interest";
+import { resolveRegistrationFee } from "@/lib/events/fees";
 
 type EventDetail = {
   id: string;
   title: string;
   code: string;
   defaultFee: number | null;
+  memberFee: number | null;
+  nonMemberFee: number | null;
   eventDate: string | null;
   venue: string | null;
 };
@@ -41,6 +49,7 @@ type FormState = {
   paymentDate: string;
   amountPaid: string;
   consent: boolean;
+  teacherInterest: typeof EMPTY_TEACHER_INTEREST;
 };
 
 function defaultForm(fee: string): FormState {
@@ -53,6 +62,7 @@ function defaultForm(fee: string): FormState {
     paymentDate: new Date().toISOString().slice(0, 10),
     amountPaid: fee,
     consent: false,
+    teacherInterest: { ...EMPTY_TEACHER_INTEREST },
   };
 }
 
@@ -67,6 +77,11 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [successRef, setSuccessRef] = useState<string | null>(null);
   const [signedInMember, setSignedInMember] = useState<SessionMember | null>(null);
+  const [master, setMaster] = useState<{
+    govWorkInterestOptions: { id: string; code?: string; label?: string }[];
+    lectureLanguages: { id: string; code?: string; label?: string }[];
+    employmentPreferenceTypes: { id: string; label?: string }[];
+  } | null>(null);
 
   function touchField(field: EventRegistrationField, value: string) {
     setFieldErrors((prev) => ({
@@ -79,17 +94,23 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
     void (async () => {
       setLoading(true);
       try {
-        const [eventRes, sessionRes] = await Promise.all([
+        const [eventRes, sessionRes, masterRes] = await Promise.all([
           fetch(`/api/events/${eventId}`),
           fetch("/api/auth/session", { credentials: "include" }),
+          fetch("/api/master"),
         ]);
         const eventData = await eventRes.json();
         if (!eventRes.ok) throw new Error(eventData.error ?? "Event not found");
         setEvent(eventData.event);
-        const fee =
-          eventData.event.defaultFee != null
-            ? String(eventData.event.defaultFee)
-            : "";
+        const masterData = await masterRes.json();
+        setMaster({
+          govWorkInterestOptions: masterData.govWorkInterestOptions ?? [],
+          lectureLanguages: masterData.lectureLanguages ?? [],
+          employmentPreferenceTypes: masterData.employmentPreferenceTypes ?? [],
+        });
+
+        const memberFee = resolveRegistrationFee(eventData.event, true);
+        const fee = memberFee != null ? String(memberFee) : "";
         setForm(defaultForm(fee));
 
         if (sessionRes.ok) {
@@ -117,6 +138,21 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    if (!signedInMember) {
+      setError("Sign in as an APYEA member to register");
+      setSubmitting(false);
+      return;
+    }
+  const teacherErr = validateTeacherInterest(
+      form.teacherInterest,
+      (id) => master?.govWorkInterestOptions.find((o) => o.id === id)?.code,
+    );
+    if (teacherErr) {
+      setError(teacherErr);
+      setSubmitting(false);
+      return;
+    }
+
     const errors = collectEventRegistrationFieldErrors(form);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -129,7 +165,7 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ eventId, ...form }),
+        body: JSON.stringify({ eventId, ...form, teacherInterest: form.teacherInterest }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Registration failed");
@@ -141,6 +177,8 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
     }
   }
 
+  const memberFeeValue = event ? resolveRegistrationFee(event, true) : null;
+
   let body: React.ReactNode;
 
   if (loading) {
@@ -150,7 +188,7 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
       <div className="mx-auto max-w-lg px-5 py-16">
         <p className="text-sm text-red-600">{error ?? "Event not available"}</p>
         <Link href="/events" className="mt-4 inline-block text-sm font-medium text-[#2F4F3A]">
-          ← All events
+          ← All programmes
         </Link>
       </div>
     );
@@ -162,7 +200,7 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
             We will verify your payment and confirm your registration by email.
           </p>
           <Link href="/events" className="mt-6 inline-block text-sm font-medium text-[#2F4F3A]">
-            Back to events
+            Back to programmes
           </Link>
         </FormShell>
       </div>
@@ -171,7 +209,7 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
     body = (
       <div className="mx-auto max-w-2xl px-5 py-10 lg:px-8">
         <Link href="/events" className="text-sm font-medium text-[#2F4F3A] hover:underline">
-          ← All events
+          ← All programmes
         </Link>
         <FormShell title={event.title} subtitle={`Event code: ${event.code}`}>
           {signedInMember ? (
@@ -179,15 +217,15 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
               Signed in as member — your profile details are pre-filled.
             </p>
           ) : (
-            <p className="mb-4 text-sm text-[#5F7A66]">
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               <Link
                 href={`/login?redirect=/events/${eventId}/register`}
-                className="font-medium text-[#2F4F3A]"
+                className="font-semibold text-[#2F4F3A] underline"
               >
-                Sign in
+                Sign in as an APYEA member
               </Link>{" "}
-              as a member to register faster.
-            </p>
+              to register for this programme.
+            </div>
           )}
           <form onSubmit={onSubmit} className="space-y-4">
             {error ? (
@@ -258,7 +296,18 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
                 />
               </div>
             </StepCard>
-            <StepCard label="Event payment">
+            {master && signedInMember ? (
+              <StepCard label="Yoga teaching interests">
+                <YogaTeacherInterestSection
+                  value={form.teacherInterest}
+                  onChange={(teacherInterest) => setForm({ ...form, teacherInterest })}
+                  govWorkInterestOptions={master.govWorkInterestOptions}
+                  lectureLanguages={master.lectureLanguages}
+                  employmentPreferenceTypes={master.employmentPreferenceTypes}
+                />
+              </StepCard>
+            ) : null}
+            <StepCard label="Programme payment">
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField
                   label="Payment reference (UPI / transaction ID)"
@@ -301,7 +350,7 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
                     if (fieldErrors.amountPaid) touchField("amountPaid", amountPaid);
                   }}
                   onBlur={(e) => touchField("amountPaid", e.target.value)}
-                  readOnly={event.defaultFee != null}
+                  readOnly={memberFeeValue != null}
                 />
               </div>
             </StepCard>
@@ -327,7 +376,11 @@ export function EventRegistrationForm({ eventId }: { eventId: string }) {
               >
                 Cancel
               </Link>
-              <PrimaryButton type="submit" disabled={submitting} className="sm:w-auto">
+              <PrimaryButton
+                type="submit"
+                disabled={submitting || !signedInMember}
+                className="sm:w-auto"
+              >
                 {submitting ? "Submitting…" : "Submit registration"}
               </PrimaryButton>
             </div>

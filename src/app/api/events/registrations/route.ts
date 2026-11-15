@@ -39,7 +39,16 @@ export async function POST(request: NextRequest) {
     }
 
     const memberCtx = await optionalMemberContext(request);
-    const registration = await submitEventRegistration(body, memberCtx ?? undefined);
+    if (!memberCtx?.memberId || !memberCtx.userId) {
+      return NextResponse.json(
+        { error: "Sign in as an APYEA member to register for programmes" },
+        { status: 401 },
+      );
+    }
+    const registration = await submitEventRegistration(body, {
+      userId: memberCtx.userId,
+      memberId: memberCtx.memberId,
+    });
 
     return NextResponse.json(
       {

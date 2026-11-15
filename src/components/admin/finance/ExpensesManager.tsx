@@ -11,7 +11,7 @@ import { TableSkeletonRows } from "@/components/ui/skeleton";
 
 type VoucherRow = {
   id: string;
-  voucherNumber: string;
+  voucherNumber: string | null;
   expenseCategory: ExpenseCategory;
   status: ExpenseVoucherStatus;
   expenseDate: string;
@@ -42,6 +42,7 @@ function defaultExpenseForm() {
   return {
     expenseCategory: "ADMINISTRATIVE" as ExpenseCategory,
     expenseDate: new Date().toISOString().slice(0, 10),
+    needByDate: "",
     description: "",
     amount: "",
     paymentMethod: "ONLINE",
@@ -95,7 +96,7 @@ export function ExpensesManager() {
     if (!q) return vouchers;
     return vouchers.filter(
       (v) =>
-        v.voucherNumber.toLowerCase().includes(q) ||
+        (v.voucherNumber ?? "").toLowerCase().includes(q) ||
         v.paidTo.toLowerCase().includes(q) ||
         v.description.toLowerCase().includes(q),
     );
@@ -125,7 +126,10 @@ export function ExpensesManager() {
       body.set("amount", form.amount);
       body.set("paymentMethod", form.paymentMethod);
       body.set("paidTo", form.paidTo);
-      if (form.transactionRef) body.set("transactionRef", form.transactionRef);
+      if (form.paymentMethod !== "CASH" && form.transactionRef) {
+        body.set("transactionRef", form.transactionRef);
+      }
+      if (form.needByDate) body.set("needByDate", form.needByDate);
       if (form.supportingBillNo) body.set("supportingBillNo", form.supportingBillNo);
       if (form.programId) body.set("programId", form.programId);
       if (billFile) body.set("bill", billFile);
@@ -235,7 +239,9 @@ export function ExpensesManager() {
             ) : (
               filteredVouchers.map((v) => (
                 <tr key={v.id} className="border-b border-zinc-100">
-                  <td className="px-4 py-3 font-mono text-xs">{v.voucherNumber}</td>
+                  <td className="px-4 py-3 font-mono text-xs">
+                    {v.voucherNumber ?? "Pending approval"}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {new Date(v.expenseDate).toLocaleDateString("en-IN")}
                   </td>
@@ -280,6 +286,15 @@ export function ExpensesManager() {
                           Reject
                         </button>
                       </span>
+                    ) : v.status === "APPROVED" && v.voucherNumber ? (
+                      <a
+                        href={`/admin/finance/expenses/print/${v.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#2F4F3A] hover:underline"
+                      >
+                        Print
+                      </a>
                     ) : (
                       "—"
                     )}
@@ -295,7 +310,7 @@ export function ExpensesManager() {
         open={modalOpen}
         onClose={closeModal}
         title="New expense voucher"
-        description="Creates a submitted voucher awaiting approval."
+        description="Creates a submitted voucher. A voucher ID is assigned when approved."
         wide
         closeDisabled={saveLoading}
       >
@@ -325,6 +340,12 @@ export function ExpensesManager() {
             required
             value={form.expenseDate}
             onChange={(e) => setForm({ ...form, expenseDate: e.target.value })}
+          />
+          <TextField
+            label="Need-by date (optional)"
+            type="date"
+            value={form.needByDate}
+            onChange={(e) => setForm({ ...form, needByDate: e.target.value })}
           />
           <TextField
             label="Amount (₹)"
@@ -359,12 +380,14 @@ export function ExpensesManager() {
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
-          <TextField
-            label="Transaction reference"
-            className="sm:col-span-2"
-            value={form.transactionRef}
-            onChange={(e) => setForm({ ...form, transactionRef: e.target.value })}
-          />
+          {form.paymentMethod !== "CASH" ? (
+            <TextField
+              label="Transaction reference"
+              className="sm:col-span-2"
+              value={form.transactionRef}
+              onChange={(e) => setForm({ ...form, transactionRef: e.target.value })}
+            />
+          ) : null}
           <TextField
             label="Bill / invoice number (optional)"
             value={form.supportingBillNo}

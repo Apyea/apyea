@@ -33,6 +33,7 @@ type ExpenseFields = {
   supportingBillNo?: string;
   programId?: string;
   remarks?: string;
+  needByDate?: string;
 };
 
 async function parseExpenseCreateRequest(request: NextRequest): Promise<
@@ -63,6 +64,7 @@ async function parseExpenseCreateRequest(request: NextRequest): Promise<
         : undefined,
       programId: form.get("programId") ? String(form.get("programId")) : undefined,
       remarks: form.get("remarks") ? String(form.get("remarks")) : undefined,
+      needByDate: form.get("needByDate") ? String(form.get("needByDate")) : undefined,
     };
 
     return { ok: true, fields, bill };
@@ -137,6 +139,7 @@ export async function POST(request: NextRequest) {
         paymentMethod: method,
         paidTo: fields.paidTo,
         transactionRef: fields.transactionRef,
+        needByDate: fields.needByDate ? new Date(fields.needByDate) : undefined,
         supportingBillNo: fields.supportingBillNo,
         supportingBillFileId,
         programId: fields.programId,

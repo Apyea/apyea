@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { decimalToNumber } from "@/lib/events/workflow";
+import { PROGRAM_CATEGORY_LABELS } from "@/lib/finance/program-labels";
 
 export function eventIsOpenForRegistration(event: {
   isActive: boolean;
@@ -15,7 +16,7 @@ export async function listPublicEvents() {
   const events = await prisma.event.findMany({
     where: { isActive: true, registrationOpen: true },
     orderBy: [{ eventDate: "asc" }, { title: "asc" }],
-    include: { program: { select: { title: true } } },
+    include: { program: { select: { title: true, category: true } } },
   });
   return events
     .filter((e) => eventIsOpenForRegistration(e))
@@ -27,7 +28,12 @@ export async function listPublicEvents() {
       eventDate: e.eventDate,
       venue: e.venue,
       defaultFee: decimalToNumber(e.defaultFee),
+      memberFee: decimalToNumber(e.memberFee),
+      nonMemberFee: decimalToNumber(e.nonMemberFee),
       programTitle: e.program?.title ?? null,
+      programCategory: e.program?.category
+        ? PROGRAM_CATEGORY_LABELS[e.program.category]
+        : null,
       registrationClosesAt: e.registrationClosesAt,
     }));
 }
@@ -35,7 +41,7 @@ export async function listPublicEvents() {
 export async function getPublicEvent(id: string) {
   const e = await prisma.event.findUnique({
     where: { id },
-    include: { program: { select: { title: true } } },
+    include: { program: { select: { title: true, category: true } } },
   });
   if (!e || !eventIsOpenForRegistration(e)) return null;
   return {
@@ -46,7 +52,12 @@ export async function getPublicEvent(id: string) {
     eventDate: e.eventDate,
     venue: e.venue,
     defaultFee: decimalToNumber(e.defaultFee),
+    memberFee: decimalToNumber(e.memberFee),
+    nonMemberFee: decimalToNumber(e.nonMemberFee),
     programTitle: e.program?.title ?? null,
+    programCategory: e.program?.category
+      ? PROGRAM_CATEGORY_LABELS[e.program.category]
+      : null,
     registrationClosesAt: e.registrationClosesAt,
   };
 }
