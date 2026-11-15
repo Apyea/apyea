@@ -304,12 +304,6 @@ export function ApyeaLandingPage() {
                   >
                     Member login
                   </Link>
-                  <Link
-                    href="/admin/membership/applications"
-                    className="inline-flex items-center justify-center rounded-full border border-[#1E2E24]/15 bg-white/80 px-8 py-3.5 text-sm font-medium text-[#5F7A66] backdrop-blur-sm"
-                  >
-                    Admin
-                  </Link>
                 </div>
               </div>
             </div>
